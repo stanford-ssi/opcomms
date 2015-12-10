@@ -1,3 +1,3 @@
 # opcomms
-<head>Client IV</head>
+## Client IV
 Includes the desktop client for SSI Satellites' optical communications systems v4
