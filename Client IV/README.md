@@ -40,7 +40,8 @@
     constructor // fields: PPM-level, pulse length, sample rate, threshold
     updateParams() //read from fields and send to encodeDecode.py and hide ParamsWindow
 
-#module align.py // takes in target/home GPS and IMU inputs
+#module align.py 
+    // takes in target/home GPS and IMU inputs
     getAlignmentData() //ask parser.py for IMU data
 
     start(targetGPS, alignWindow) // runs in new thread object
@@ -73,7 +74,8 @@
     decode(message)
         checkForErrors(message)
 
-#module/class parser.py //interprets incoming serial and encodes outgoing serial  //locks to prevent conflicts
+#module/class parser.py 
+    //interprets incoming serial and encodes outgoing serial  //locks to prevent conflicts
     beamHold(bool) 
     getAlignmentData() //read from serial buffer and parse into vector of values (and return)
     move(deltaAlt, deltaAz)
