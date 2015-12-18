@@ -1,14 +1,16 @@
 from tkinter import *
 
 class MainWindow():
-	def __init__(self, master=None):
+	def __init__(self):
 		global root
 		root = Tk()
-		windowWidth = 800
-		windowHeight = 600
-		root.geometry('{}x{}'.format(windowWidth, windowHeight))
-		root.resizable(width=TRUE, height=TRUE)
-		self.populateWindow()
+		# windowWidth = 800
+		# windowHeight = 600
+		# root.geometry('{}x{}'.format(windowWidth, windowHeight))
+		root.resizable(width=FALSE, height=FALSE)
+		self.transmitCanvas()
+		self.receiveCanvas()
+		self.optionsCanvas()
 		root.mainloop()
 		# creates ClientGUI Window w/ TX box, RX box, buttons
 		# put checkMyEmail() in its own thread
@@ -17,31 +19,38 @@ class MainWindow():
 		# instantiate a ParamsWindow
 		# hide ParamsWindow
 
-	def populateWindow(self):
-		self.createElements()
+	def transmitCanvas(self):
+		'''Create Transmit Canvas and populate with label, entry box, and button'''
+		transmitCanvas = Canvas(root)
+		transmitCanvas.grid(column=0, columnspan=2, row=0, rowspan=5)
+
+		transmitLabel = Label(transmitCanvas, text="Transmit", font=("Arial", 20), fg="green")
+		transmitEntry = Entry(transmitCanvas)
+		transmitButton = Button(transmitCanvas, text="Enter Transmission")
+
 		root.update_idletasks()
-		self.addElements()
-		self.bindElements()
+		transmitLabel.pack()
+		transmitEntry.pack()
+		transmitButton.pack()
 
-	def createElements(self):
-		'''Make Transmit and Receive Labels, make transmit button'''
-		global transmitLabel
-		global receiveLabel
-		global transmitButton
-		transmitLabel = Label(root,text="Transmit",font=("Arial", 20),fg="green")
-		receiveLabel = Label(root,text="Receive",font=("Arial", 20),fg="blue")
-		transmitButton = Button(root,text="Enter Transmission")
-
-	def addElements(self):
-		'''Place buttons and labels in window'''
-		transmitLabel.place(x=(root.winfo_width()*(1/4) - transmitLabel.winfo_width()*(1/2)), y=(root.winfo_height()*(1/8) - transmitLabel.winfo_height()*(1/2)))
-		receiveLabel.place(x=(root.winfo_width()*(3/4) - receiveLabel.winfo_width()*(1/2)), y=(root.winfo_height()*(1/8) - receiveLabel.winfo_height()*(1/2)))
-		transmitButton.place(x=(root.winfo_width()*(1/4) - transmitButton.winfo_width()*(1/2)), y=(root.winfo_height()*(3/4) - transmitButton.winfo_height()*(1/2)))
-		
-	def bindElements(self):	
 		transmitButton.bind('<Transmit_Button>',self.transmit())
 
-		# make Receive text box
+	def receiveCanvas(self):
+		'''Create Receive Canvas and populate with label and entry box'''
+		receiveCanvas = Canvas(root)
+		receiveCanvas.grid(column=2, columnspan=2, row=0, rowspan=6)
+
+		receiveLabel = Label(receiveCanvas, text="Receive", font=("Arial", 20), fg="blue")
+		receiveText = Text(receiveCanvas, height=10)
+
+		root.update_idletasks
+		receiveLabel.pack()
+		receiveText.pack()
+
+	def optionsCanvas(self):
+		'''Create Options Canvas and populate with buttons'''
+		receiveCanvas = Canvas(root)
+		receiveCanvas.grid(column=0, columnspan=2, row=5)
 
 	def setMessage(self, message):
 		# prints to receive console
