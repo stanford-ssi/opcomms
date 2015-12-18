@@ -3,9 +3,9 @@ from tkinter import *
 class MainWindow(Frame):
 	def __init__(self, master=None):
 		root = Tk()
-		transmitButton = Button(root,text="Enter Transmission")
-		transmitButton.pack()
-		transmitButton.bind('<Transmit_Button>',transmit())
+		root.geometry('{}x{}'.format(400, 600))
+		root.resizable(width=TRUE, height=TRUE)
+		populateWindow()
 		root.mainloop()
 		# creates ClientGUI Window w/ TX box, RX box, buttons
 		# put checkMyEmail() in its own thread
@@ -13,6 +13,13 @@ class MainWindow(Frame):
 		# call alignButton() [purpose of this is to force checkMyEmail to block/unblock properly]
 		# instantiate a ParamsWindow
 		# hide ParamsWindow
+
+	def populateWindow(self):
+		buttonWidth = 100
+		buttonHeight = 25
+		transmitButton = Button(root,text="Enter Transmission")
+		transmitButton.place(x = (root.winfo_width - buttonWidth)/2, y = (root.winfo_height - buttonHeight)/2 , height=buttonHeight, width=buttonWidth)
+		#transmitButton.bind('<Transmit_Button>',transmit())
 
 	def setMessage(message):
 		# prints to receive console
