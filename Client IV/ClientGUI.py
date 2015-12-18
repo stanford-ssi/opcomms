@@ -2,13 +2,13 @@ from tkinter import *
 
 class MainWindow():
 	def __init__(self, master=None):
+		global root
 		root = Tk()
 		windowWidth = 800
 		windowHeight = 600
 		root.geometry('{}x{}'.format(windowWidth, windowHeight))
 		root.resizable(width=TRUE, height=TRUE)
-		root.update_idletasks()
-		self.populateWindow(root)
+		self.populateWindow()
 		root.mainloop()
 		# creates ClientGUI Window w/ TX box, RX box, buttons
 		# put checkMyEmail() in its own thread
@@ -17,16 +17,28 @@ class MainWindow():
 		# instantiate a ParamsWindow
 		# hide ParamsWindow
 
-	def populateWindow(self, root):
-		# make Transmit and Receive labels
-		transmitLabel = Label(root,text="Transmit",font=("Arial", 20),fg="green")
-		transmitLabel.place(x=(root.winfo_width()*(1/4) - transmitLabel.winfo_width()*(1/2)), y=(root.winfo_height()*(1/8) - transmitLabel.winfo_height()*(1/2)))
-		receiveLabel = Label(root,text="Receive",font=("Arial", 20),fg="blue")
-		receiveLabel.place(x=(root.winfo_width()*(3/4) - receiveLabel.winfo_width()*(1/2)), y=(root.winfo_height()*(1/8) - receiveLabel.winfo_height()*(1/2)))
+	def populateWindow(self):
+		self.createElements()
+		root.update_idletasks()
+		self.addElements()
+		self.bindElements()
 
-		# make Transmit text box and button
+	def createElements(self):
+		'''Make Transmit and Receive Labels, make transmit button'''
+		global transmitLabel
+		global receiveLabel
+		global transmitButton
+		transmitLabel = Label(root,text="Transmit",font=("Arial", 20),fg="green")
+		receiveLabel = Label(root,text="Receive",font=("Arial", 20),fg="blue")
 		transmitButton = Button(root,text="Enter Transmission")
+
+	def addElements(self):
+		'''Place buttons and labels in window'''
+		transmitLabel.place(x=(root.winfo_width()*(1/4) - transmitLabel.winfo_width()*(1/2)), y=(root.winfo_height()*(1/8) - transmitLabel.winfo_height()*(1/2)))
+		receiveLabel.place(x=(root.winfo_width()*(3/4) - receiveLabel.winfo_width()*(1/2)), y=(root.winfo_height()*(1/8) - receiveLabel.winfo_height()*(1/2)))
 		transmitButton.place(x=(root.winfo_width()*(1/4) - transmitButton.winfo_width()*(1/2)), y=(root.winfo_height()*(3/4) - transmitButton.winfo_height()*(1/2)))
+		
+	def bindElements(self):	
 		transmitButton.bind('<Transmit_Button>',self.transmit())
 
 		# make Receive text box
