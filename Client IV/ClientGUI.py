@@ -22,8 +22,8 @@ class MainWindow():
 		# alignWindow.hide()
 		# paramsWindow.hide()
 
-		# put checkMyEmail() in its own thread
-		# call alignButton() [purpose of this is to force checkMyEmail to block/unblock properly]
+		 #put checkMyEmail() in its own thread
+		 #call alignButton() [purpose of this is to force checkMyEmail to block/unblock properly]
 
 	def transmitFrame(self):
 		'''Create Transmit Canvas and populate with label, entry box, and button'''
@@ -104,20 +104,62 @@ class MainWindow():
 
 class AlignWindow():
 	def __init__(self):
+		global alignWindow
 		alignWindow= Tk()
 		alignWindow.resizable(width=FALSE, height=FALSE)
+		self.populateAlignWindow()
 		alignWindow.mainloop()
 
-		button = Button(text="Quit", command=alignWindow.destroy)
-		button.pack()
 
 		# target GPS box, "virtual oscilloscope"
+	def populateAlignWindow(self):
+		self.addGPSEntry()
+		self.addVirtualOscope()
+		self.addControlButtons()
+
+	def addGPSEntry(self):
+		GPSEntryFrame = Frame(alignWindow)
+		GPSEntryFrame.grid(row = 0, column = 0)
+		latitudeField = Entry(GPSEntryFrame)
+		longitudeField = Entry(GPSEntryFrame)
+		altitudeField = Entry(GPSEntryFrame)
+		GPSLabel = Label(GPSEntryFrame, text="Input GPS coordinates in decimal degrees")
+		latitudeLabel = Label(GPSEntryFrame, text="Latitude")
+		longitudeLabel = Label(GPSEntryFrame, text="Longitude")
+		altitudeLabel = Label(GPSEntryFrame, text = "Altitude")
+		GPSButton = Button(GPSEntryFrame, text = "Enter Coordinates")
+
+		GPSLabel.grid(row = 0, column = 0, columnspan = 4)
+		latitudeField.grid(row = 1, column = 0)
+		longitudeField.grid(row = 1, column = 1)
+		altitudeField.grid(row = 1, column = 2)
+		GPSButton.grid(row = 1, column = 3)
+		latitudeLabel.grid(row = 2, column = 0)
+		longitudeLabel.grid(row = 2, column = 1)
+		altitudeLabel.grid(row = 2, column = 2)
+
+	def addVirtualOscope(self):
+		oscopeFrame = Frame(alignWindow)
+		oscopeFrame.grid(row=1, column = 0)
+		oscopeLabel = Label(oscopeFrame, text = "Photodiode Output")
+		oscopeLabel.pack()
+
+	def addControlButtons(self):
+		controlButtonsFrame = Frame(alignWindow)
+		controlButtonsFrame.grid(row = 2, column = 0)
+		startButton = Button(controlButtonsFrame, text = "Start")
+		closeButton = Button(controlButtonsFrame, text = "Close")
+		bigRedButton = Button(controlButtonsFrame, text = "Stop")
+
+		startButton.grid(row = 0, column = 0)
+		bigRedButton.grid(row = 0, column = 1)
+		closeButton.grid(row = 0, column = 2)
 
 	def setGPS(self):
 		# set target GPS locally
 		return 0
 
-	def startButton(self):
+	def start(self):
 		# send target GPS and alignWindow object to align.py to start alignment procedure
 		return 0
 
@@ -125,11 +167,11 @@ class AlignWindow():
 		# update oscope readout
 		return 0
 
-	def bigRedButton(self):
+	def stop(self):
 		# stop thread in which start() in align.py is running
 		return 0
 
-	def closeButton(self):
+	def close(self):
 		# hides AlignWindow
 		return 0
 
@@ -139,10 +181,51 @@ class AlignWindow():
 
 class ParamsWindow():
 	def __init__(self):
+		global paramsWindow
 		paramsWindow= Tk()
 		paramsWindow.resizable(width=FALSE, height=FALSE)
+		self.populateParamsWindow()
 		paramsWindow.mainloop()
 		# fields: PPM-level, pulse length, sample rate, threshold
+
+	def populateParamsWindow(self):
+		self.addParamsFields()
+		self.addParamsButtons()
+
+	def addParamsFields(self):
+		paramsFieldsFrame = Frame(paramsWindow)
+		paramsFieldsFrame.grid(row = 0, column = 0)
+
+		parametersTitle = Label(paramsFieldsFrame, text = "Parameters")
+		ppmLevelLabel = Label(paramsFieldsFrame, text = "PPM-level")
+		pulseLengthLabel = Label(paramsFieldsFrame,  text = "Pulse Length")
+		sampleRateLabel = Label(paramsFieldsFrame, text = "Sample Rate")
+		thresholdLabel = Label(paramsFieldsFrame, text = "Threshold")
+
+		ppmLevelField = Entry(paramsFieldsFrame)
+		pulseLengthField = Entry(paramsFieldsFrame)
+		sampleRateField = Entry(paramsFieldsFrame)
+		thresholdField = Entry(paramsFieldsFrame)
+
+		parametersTitle.grid(row = 0, column = 0, columnspan = 2)
+		ppmLevelLabel.grid(row = 1, column = 0)
+		ppmLevelField.grid(row = 1, column = 1)
+		pulseLengthLabel.grid(row = 2, column = 0)
+		pulseLengthField.grid(row = 2, column = 1)
+		sampleRateLabel.grid(row = 3, column = 0)
+		sampleRateField.grid(row = 3, column = 1)
+		thresholdLabel.grid(row = 4, column = 0)
+		thresholdField.grid(row = 4, column = 1)
+
+	def addParamsButtons(self):
+		paramsButtonsFrame = Frame(paramsWindow)
+		paramsButtonsFrame.grid(row = 1, column = 0)
+
+		enterButton = Button(paramsButtonsFrame, text = "Enter")
+		cancelButton = Button(paramsButtonsFrame, text = "Cancel")
+
+		enterButton.grid(row = 0, column = 0)
+		cancelButton.grid(row = 0, column = 1)
 
 	def updateParams(self):
 		# read from fields and send to encodeDecode.py and hide ParamsWindow
