@@ -1,2 +1,3 @@
 from ClientGUI import *
-mainWindow = MainWindow()
+
+MainWindow()
