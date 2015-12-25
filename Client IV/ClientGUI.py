@@ -9,6 +9,7 @@ class MainWindow():
 		# windowHeight = 600
 		# root.geometry('{}x{}'.format(windowWidth, windowHeight))
 		root.resizable(width=FALSE, height=FALSE)
+		root.config(bg = "white")
 		self.transmitFrame()
 		self.receiveFrame()
 		self.optionsFrame()
@@ -31,15 +32,18 @@ class MainWindow():
 
 		transmitFrame = Frame(root)
 		transmitFrame.grid(column=0, columnspan=2, row=0, rowspan=3)
+		transmitFrame.config(bg = "white")
 
-		transmitLabel = Label(transmitFrame, text="Transmit", font=("Arial", 20), fg="green")
-		transmitEntry = Entry(transmitFrame, width=30, fg="green")
-		transmitButton = Button(transmitFrame, text="Send")
+		transmitLabel = Label(transmitFrame, text="Transmit", font=("Sans Serif", 20, "bold"), fg="green", bg = "white")
+		transmitEntryLabel = Label(transmitFrame, text = "(Instructions for Transmit Input)", font = ("Times New Roman", 9), fg="black", bg = "white")
+		transmitEntry = Entry(transmitFrame, width=30, fg="green", highlightthickness = 2, highlightcolor = "green", highlightbackground = "light slate gray")
+		transmitButton = Button(transmitFrame, text="SEND", font=("Arial", 8, "bold"), fg="white", bg="green", activebackground = "DarkGreen")
 
 		root.update_idletasks()
-		transmitLabel.pack()
-		transmitEntry.pack()
-		transmitButton.pack()
+		transmitLabel.pack(pady= '10 0')
+		transmitEntryLabel.pack(padx = 10, pady = "35 10")
+		transmitEntry.pack(padx = 10)
+		transmitButton.pack(pady = 10)
 
 		transmitButton.bind('<Transmit_Button>',self.transmit())
 
@@ -49,25 +53,27 @@ class MainWindow():
 
 		receiveFrame = Frame(root)
 		receiveFrame.grid(column=2, columnspan=2, row=0, rowspan=6)
+		receiveFrame.config(bg = "white")
 
-		receiveLabel = Label(receiveFrame, text="Receive", font=("Arial", 20), fg="blue")
-		receiveText = Text(receiveFrame, width = 30, height = 10, fg = "blue", bd=5)
+		receiveLabel = Label(receiveFrame, text="Receive", font=("Sans Serif", 20, "bold"), fg="blue", bg = "white")
+		receiveText = Text(receiveFrame, width = 30, height = 10, fg = "blue", highlightthickness = 2, highlightcolor = "blue", highlightbackground = "light slate gray")
 
 		root.update_idletasks
-		receiveLabel.pack()
-		receiveText.pack()
+		receiveLabel.pack(pady="10 0")
+		receiveText.pack(padx = 10, pady = 10)
 
 	def optionsFrame(self):
 		'''Create Options Canvas and populate with buttons'''
 		optionsFrame = Frame(root)
 		optionsFrame.grid(column=0, columnspan=2, row=5)
+		optionsFrame.config(bg = "white")
 
-		alignButton = Button(optionsFrame, text="Align", command=self.alignButton())
-		paramsButton = Button(optionsFrame, text="Set Parameters")
+		alignButton = Button(optionsFrame, text="Align", font=("Arial", 8, "bold"), fg = "white", bg = "purple4", activebackground = "purple", command = self.alignButton())
+		paramsButton = Button(optionsFrame, text="Set Parameters", font = ("Arial", 8, "bold"), fg = "white", bg = "cyan4", activebackground = "cyan", command = self.paramsButton())
 
 		root.update_idletasks()
-		alignButton.grid(column=0, row = 0)
-		paramsButton.grid(column=1, row = 0)
+		alignButton.grid(column=0, row = 0, padx = 5, pady = "0 10")
+		paramsButton.grid(column=1, row = 0, padx = 5, pady = "0 10")
 
 	def setMessage(self, message):
 		# prints to receive console
@@ -107,6 +113,7 @@ class AlignWindow():
 		global alignWindow
 		alignWindow= Tk()
 		alignWindow.resizable(width=FALSE, height=FALSE)
+		alignWindow.config(bg = "white")
 		self.populateAlignWindow()
 		alignWindow.mainloop()
 
@@ -120,40 +127,47 @@ class AlignWindow():
 	def addGPSEntry(self):
 		GPSEntryFrame = Frame(alignWindow)
 		GPSEntryFrame.grid(row = 0, column = 0)
-		latitudeField = Entry(GPSEntryFrame)
-		longitudeField = Entry(GPSEntryFrame)
-		altitudeField = Entry(GPSEntryFrame)
-		GPSLabel = Label(GPSEntryFrame, text="Input GPS coordinates in decimal degrees")
-		latitudeLabel = Label(GPSEntryFrame, text="Latitude")
-		longitudeLabel = Label(GPSEntryFrame, text="Longitude")
-		altitudeLabel = Label(GPSEntryFrame, text = "Altitude")
-		GPSButton = Button(GPSEntryFrame, text = "Enter Coordinates")
+		GPSEntryFrame.config(bg = "white")
 
-		GPSLabel.grid(row = 0, column = 0, columnspan = 4)
-		latitudeField.grid(row = 1, column = 0)
-		longitudeField.grid(row = 1, column = 1)
-		altitudeField.grid(row = 1, column = 2)
-		GPSButton.grid(row = 1, column = 3)
+		GPSLabel = Label(GPSEntryFrame, text="Input GPS coordinates in decimal degrees", font=("Sans Serif", 12, "bold"), bg = "white")
+		latitudeField = Entry(GPSEntryFrame, highlightthickness = 2, highlightcolor = "purple4", highlightbackground = "light slate gray")
+		longitudeField = Entry(GPSEntryFrame, highlightthickness = 2, highlightcolor = "purple4", highlightbackground = "light slate gray")
+		altitudeField = Entry(GPSEntryFrame, highlightthickness = 2, highlightcolor = "purple4", highlightbackground = "light slate gray")
+		latitudeLabel = Label(GPSEntryFrame, text="Latitude", font=("Sans Serif", 10, "bold"), bg = "white")
+		longitudeLabel = Label(GPSEntryFrame, text="Longitude", font=("Sans Serif", 10, "bold"), bg = "white")
+		altitudeLabel = Label(GPSEntryFrame, text = "Altitude", font=("Sans Serif", 10, "bold"), bg = "white")
+		GPSButton = Button(GPSEntryFrame, text = "Enter Coordinates", font = ("Sans Serif", 10, "bold"), fg = "white", bg = "purple4", activebackground = "purple")
+
+		GPSLabel.grid(row = 0, column = 0, columnspan = 4, pady  = "10 0")
+		latitudeField.grid(row = 1, column = 0, padx = "10 5", pady =  "10 0")
+		longitudeField.grid(row = 1, column = 1, padx = 5, pady = "10 0")
+		altitudeField.grid(row = 1, column = 2, padx = 5, pady = "10 0")
+		GPSButton.grid(row = 1, column = 3, padx = "5 10", pady = "10 0")
 		latitudeLabel.grid(row = 2, column = 0)
 		longitudeLabel.grid(row = 2, column = 1)
-		altitudeLabel.grid(row = 2, column = 2)
+		altitudeLabel.grid(row = 2, column = 2) 
 
 	def addVirtualOscope(self):
 		oscopeFrame = Frame(alignWindow)
 		oscopeFrame.grid(row=1, column = 0)
-		oscopeLabel = Label(oscopeFrame, text = "Photodiode Output")
-		oscopeLabel.pack()
+		oscopeFrame.config(bg = "white")
 
+		oscopeLabel = Label(oscopeFrame, text = "Photodiode Output", font = ("Sans Serif", 12, "bold"), bg = "white")
+		oscopeLabel.pack(pady = 10)
+ 
 	def addControlButtons(self):
 		controlButtonsFrame = Frame(alignWindow)
 		controlButtonsFrame.grid(row = 2, column = 0)
-		startButton = Button(controlButtonsFrame, text = "Start")
-		closeButton = Button(controlButtonsFrame, text = "Close")
-		bigRedButton = Button(controlButtonsFrame, text = "Stop")
+		controlButtonsFrame.config(bg = "white")
 
-		startButton.grid(row = 0, column = 0)
-		bigRedButton.grid(row = 0, column = 1)
-		closeButton.grid(row = 0, column = 2)
+		startButton = Button(controlButtonsFrame, text = "Start", font = ("Sans Serif", 8, "bold"), fg = "white", bg = "DarkGreen", activebackground = "green")
+		bigRedButton = Button(controlButtonsFrame, text = "Stop", font = ("Sans Serif", 8, "bold"), fg = "white", bg = "red", activebackground = "orange red")
+		closeButton = Button(controlButtonsFrame, text = "Close", font = ("Sans Serif", 8, "bold"), fg = "white", bg = "cyan4", activebackground = "cyan")
+		
+
+		startButton.grid(row = 0, column = 0, pady = "0 10")
+		bigRedButton.grid(row = 0, column = 1, padx = 10, pady = "0 10")
+		closeButton.grid(row = 0, column = 2, pady = "0 10")
 
 	def setGPS(self):
 		# set target GPS locally
@@ -184,6 +198,7 @@ class ParamsWindow():
 		global paramsWindow
 		paramsWindow= Tk()
 		paramsWindow.resizable(width=FALSE, height=FALSE)
+		paramsWindow.config(bg = "white")
 		self.populateParamsWindow()
 		paramsWindow.mainloop()
 		# fields: PPM-level, pulse length, sample rate, threshold
@@ -195,37 +210,39 @@ class ParamsWindow():
 	def addParamsFields(self):
 		paramsFieldsFrame = Frame(paramsWindow)
 		paramsFieldsFrame.grid(row = 0, column = 0)
+		paramsFieldsFrame.config(bg = "white")
 
-		parametersTitle = Label(paramsFieldsFrame, text = "Parameters")
-		ppmLevelLabel = Label(paramsFieldsFrame, text = "PPM-level")
-		pulseLengthLabel = Label(paramsFieldsFrame,  text = "Pulse Length")
-		sampleRateLabel = Label(paramsFieldsFrame, text = "Sample Rate")
-		thresholdLabel = Label(paramsFieldsFrame, text = "Threshold")
+		parametersTitle = Label(paramsFieldsFrame, text = "Parameters", font = ("Sans Serif", 12, "bold"), bg = "white")
+		ppmLevelLabel = Label(paramsFieldsFrame, text = "PPM-level", font = ("Sans Serif", 10, "bold"), bg = "white")
+		pulseLengthLabel = Label(paramsFieldsFrame,  text = "Pulse Length", font = ("Sans Serif", 10, "bold"), bg = "white")
+		sampleRateLabel = Label(paramsFieldsFrame, text = "Sample Rate", font = ("Sans Serif", 10, "bold"), bg = "white")
+		thresholdLabel = Label(paramsFieldsFrame, text = "Threshold", font = ("Sans Serif", 10, "bold"), bg = "white")
 
-		ppmLevelField = Entry(paramsFieldsFrame)
-		pulseLengthField = Entry(paramsFieldsFrame)
-		sampleRateField = Entry(paramsFieldsFrame)
-		thresholdField = Entry(paramsFieldsFrame)
+		ppmLevelField = Entry(paramsFieldsFrame, highlightthickness = 2, highlightcolor = "cyan4", highlightbackground = "light slate gray")
+		pulseLengthField = Entry(paramsFieldsFrame, highlightthickness = 2, highlightcolor = "cyan4", highlightbackground = "light slate gray")
+		sampleRateField = Entry(paramsFieldsFrame, highlightthickness = 2, highlightcolor = "cyan4", highlightbackground = "light slate gray")
+		thresholdField = Entry(paramsFieldsFrame, highlightthickness = 2, highlightcolor = "cyan4", highlightbackground = "light slate gray")
 
 		parametersTitle.grid(row = 0, column = 0, columnspan = 2)
-		ppmLevelLabel.grid(row = 1, column = 0)
-		ppmLevelField.grid(row = 1, column = 1)
-		pulseLengthLabel.grid(row = 2, column = 0)
-		pulseLengthField.grid(row = 2, column = 1)
-		sampleRateLabel.grid(row = 3, column = 0)
-		sampleRateField.grid(row = 3, column = 1)
-		thresholdLabel.grid(row = 4, column = 0)
-		thresholdField.grid(row = 4, column = 1)
+		ppmLevelLabel.grid(row = 1, column = 0, padx =  10, pady = "10 5")
+		ppmLevelField.grid(row = 1, column = 1, padx = "0 10", pady = "10 5")
+		pulseLengthLabel.grid(row = 2, column = 0, padx = 10, pady = 5)
+		pulseLengthField.grid(row = 2, column = 1, padx = "0 10", pady =  5)
+		sampleRateLabel.grid(row = 3, column = 0, padx = 10, pady = 5)
+		sampleRateField.grid(row = 3, column = 1, padx = "0 10", pady = 5)
+		thresholdLabel.grid(row = 4, column = 0, padx = 10, pady = "5 10")
+		thresholdField.grid(row = 4, column = 1, padx = "0 10", pady = "5 10")
 
 	def addParamsButtons(self):
 		paramsButtonsFrame = Frame(paramsWindow)
 		paramsButtonsFrame.grid(row = 1, column = 0)
+		paramsButtonsFrame.config(bg = "white")
 
-		enterButton = Button(paramsButtonsFrame, text = "Enter")
-		cancelButton = Button(paramsButtonsFrame, text = "Cancel")
+		enterButton = Button(paramsButtonsFrame, text = "Enter", font = ("Sans Serif", 8, "bold"), fg = "white", bg = "cyan4", activebackground = "cyan")
+		cancelButton = Button(paramsButtonsFrame, text = "Cancel", font = ("Sans Serif", 8, "bold"), fg = "white", bg = "red", activebackground = "orange red")
 
-		enterButton.grid(row = 0, column = 0)
-		cancelButton.grid(row = 0, column = 1)
+		enterButton.grid(row = 0, column = 0, padx = "0 10", pady = 10)
+		cancelButton.grid(row = 0, column = 1, pady = 10)
 
 	def updateParams(self):
 		# read from fields and send to encodeDecode.py and hide ParamsWindow
