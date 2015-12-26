@@ -1,36 +1,38 @@
 from tkinter import *
+from threading import *
+from time import *
 
-class MainWindow():
-	def __init__(self):
-		global root
-		# figure out how to put text="OpComms System IV Desktop Client" as the window header
-		root = Tk()
+class MainWindow(Tk):
+	def __init__(self, parent):
+		Tk.__init__(self, parent)
+		self.parent = parent
 		# windowWidth = 800
 		# windowHeight = 600
-		# root.geometry('{}x{}'.format(windowWidth, windowHeight))
-		root.resizable(width=FALSE, height=FALSE)
-		root.config(bg = "white")
+		# self.geometry('{}x{}'.format(windowWidth, windowHeight))
+		self.resizable(width=FALSE, height=FALSE)
+		self.config(bg = "white")
 		self.transmitFrame()
 		self.receiveFrame()
 		self.optionsFrame()
-		root.mainloop()
-		
-		# global alignWindow
-		# global paramsWindow
-		# alignWindow = AlignWindow()
-		# paramsWindow = ParamsWindow()
+		self.update_idletasks()
 
-		# alignWindow.hide()
-		# paramsWindow.hide()
+		self.align = AlignWindow(self)
+		self.align.window.title("Align Node")
+		self.align.window.withdraw()
+
+		self.params = ParamsWindow(self)
+		self.params.window.title("Set PPM Parameters")
+		self.params.window.withdraw()
 
 		 #put checkMyEmail() in its own thread
-		 #call alignButton() [purpose of this is to force checkMyEmail to block/unblock properly]
+
+		self.openAlign()
 
 	def transmitFrame(self):
 		'''Create Transmit Canvas and populate with label, entry box, and button'''
 		global transmitEntry
 
-		transmitFrame = Frame(root)
+		transmitFrame = Frame(self)
 		transmitFrame.grid(column=0, columnspan=2, row=0, rowspan=3)
 		transmitFrame.config(bg = "white")
 
@@ -39,7 +41,6 @@ class MainWindow():
 		transmitEntry = Entry(transmitFrame, width=30, fg="green", highlightthickness = 2, highlightcolor = "green", highlightbackground = "light slate gray")
 		transmitButton = Button(transmitFrame, text="SEND", font=("Arial", 8, "bold"), fg="white", bg="green", activebackground = "DarkGreen")
 
-		root.update_idletasks()
 		transmitLabel.pack(pady= '10 0')
 		transmitEntryLabel.pack(padx = 10, pady = "35 10")
 		transmitEntry.pack(padx = 10)
@@ -51,27 +52,25 @@ class MainWindow():
 		'''Create Receive Canvas and populate with label and entry box'''
 		global receiveText
 
-		receiveFrame = Frame(root)
+		receiveFrame = Frame(self)
 		receiveFrame.grid(column=2, columnspan=2, row=0, rowspan=6)
 		receiveFrame.config(bg = "white")
 
 		receiveLabel = Label(receiveFrame, text="Receive", font=("Sans Serif", 20, "bold"), fg="blue", bg = "white")
 		receiveText = Text(receiveFrame, width = 30, height = 10, fg = "blue", highlightthickness = 2, highlightcolor = "blue", highlightbackground = "light slate gray")
 
-		root.update_idletasks
 		receiveLabel.pack(pady="10 0")
 		receiveText.pack(padx = 10, pady = 10)
 
 	def optionsFrame(self):
 		'''Create Options Canvas and populate with buttons'''
-		optionsFrame = Frame(root)
+		optionsFrame = Frame(self)
 		optionsFrame.grid(column=0, columnspan=2, row=5)
 		optionsFrame.config(bg = "white")
 
-		alignButton = Button(optionsFrame, text="Align", font=("Arial", 8, "bold"), fg = "white", bg = "purple4", activebackground = "purple", command = self.alignButton())
-		paramsButton = Button(optionsFrame, text="Set Parameters", font = ("Arial", 8, "bold"), fg = "white", bg = "cyan4", activebackground = "cyan", command = self.paramsButton())
+		alignButton = Button(optionsFrame, text="Align", font=("Arial", 8, "bold"), fg = "white", bg = "purple4", activebackground = "purple", command = self.openAlign)
+		paramsButton = Button(optionsFrame, text="Set Parameters", font = ("Arial", 8, "bold"), fg = "white", bg = "cyan4", activebackground = "cyan", command = self.openParams)
 
-		root.update_idletasks()
 		alignButton.grid(column=0, row = 0, padx = 5, pady = "0 10")
 		paramsButton.grid(column=1, row = 0, padx = 5, pady = "0 10")
 
@@ -85,18 +84,20 @@ class MainWindow():
 		# unblocks checkMyEmail
 		return 0
 
-	def alignButton(self):
-		# alignWindow.show()
-
+	def openAlign(self):
 		# blocks checkMyEmail
-		# unhides alignWindow
+
+		self.align.window.deiconify()
+		
 		# waits until alignWindow closed
 		# unblocks checkMyEmail
 		return 0;
 
-	def paramsButton(self):
+	def openParams(self):
 		# blocks checkMyEmail
-		# unhides paramsWindow
+
+		self.params.window.deiconify()
+
 		# waits until paramsWindow closed
 		# unblocks checkMyEmail
 		return 0
@@ -107,16 +108,13 @@ class MainWindow():
 			# if message found, setMessage(output of encodeDecode.py)
 			return 0
 
-
-class AlignWindow():
-	def __init__(self):
-		global alignWindow
-		alignWindow= Tk()
-		alignWindow.resizable(width=FALSE, height=FALSE)
-		alignWindow.config(bg = "white")
+class AlignWindow(Tk):
+	def __init__(self, parent):
+		self.parent = parent
+		self.window = Toplevel()
+		self.window.resizable(width=FALSE, height=FALSE)
+		self.window.config(bg = "white")
 		self.populateAlignWindow()
-		alignWindow.mainloop()
-
 
 		# target GPS box, "virtual oscilloscope"
 	def populateAlignWindow(self):
@@ -125,7 +123,7 @@ class AlignWindow():
 		self.addControlButtons()
 
 	def addGPSEntry(self):
-		GPSEntryFrame = Frame(alignWindow)
+		GPSEntryFrame = Frame(self.window)
 		GPSEntryFrame.grid(row = 0, column = 0)
 		GPSEntryFrame.config(bg = "white")
 
@@ -148,7 +146,7 @@ class AlignWindow():
 		altitudeLabel.grid(row = 2, column = 2) 
 
 	def addVirtualOscope(self):
-		oscopeFrame = Frame(alignWindow)
+		oscopeFrame = Frame(self.window)
 		oscopeFrame.grid(row=1, column = 0)
 		oscopeFrame.config(bg = "white")
 
@@ -156,13 +154,13 @@ class AlignWindow():
 		oscopeLabel.pack(pady = 10)
  
 	def addControlButtons(self):
-		controlButtonsFrame = Frame(alignWindow)
+		controlButtonsFrame = Frame(self.window)
 		controlButtonsFrame.grid(row = 2, column = 0)
 		controlButtonsFrame.config(bg = "white")
 
 		startButton = Button(controlButtonsFrame, text = "Start", font = ("Sans Serif", 8, "bold"), fg = "white", bg = "DarkGreen", activebackground = "green")
 		bigRedButton = Button(controlButtonsFrame, text = "Stop", font = ("Sans Serif", 8, "bold"), fg = "white", bg = "red", activebackground = "orange red")
-		closeButton = Button(controlButtonsFrame, text = "Close", font = ("Sans Serif", 8, "bold"), fg = "white", bg = "cyan4", activebackground = "cyan")
+		closeButton = Button(controlButtonsFrame, text = "Close", font = ("Sans Serif", 8, "bold"), fg = "white", bg = "cyan4", activebackground = "cyan", command=self.close)
 		
 
 		startButton.grid(row = 0, column = 0, pady = "0 10")
@@ -174,7 +172,7 @@ class AlignWindow():
 		return 0
 
 	def start(self):
-		# send target GPS and alignWindow object to align.py to start alignment procedure
+		# send target GPS and AlignWindow object to align.py to start alignment procedure
 		return 0
 
 	def plot(self, diodeData):
@@ -186,21 +184,19 @@ class AlignWindow():
 		return 0
 
 	def close(self):
-		# hides AlignWindow
-		return 0
+		self.window.withdraw()
 
 	def setFinished(self):
 		# boolean: alignment complete
 		return 0
 
 class ParamsWindow():
-	def __init__(self):
-		global paramsWindow
-		paramsWindow= Tk()
-		paramsWindow.resizable(width=FALSE, height=FALSE)
-		paramsWindow.config(bg = "white")
+	def __init__(self, parent):
+		self.parent = parent
+		self.window = Toplevel()
+		self.window.resizable(width=FALSE, height=FALSE)
+		self.window.config(bg = "white")
 		self.populateParamsWindow()
-		paramsWindow.mainloop()
 		# fields: PPM-level, pulse length, sample rate, threshold
 
 	def populateParamsWindow(self):
@@ -208,7 +204,7 @@ class ParamsWindow():
 		self.addParamsButtons()
 
 	def addParamsFields(self):
-		paramsFieldsFrame = Frame(paramsWindow)
+		paramsFieldsFrame = Frame(self.window)
 		paramsFieldsFrame.grid(row = 0, column = 0)
 		paramsFieldsFrame.config(bg = "white")
 
@@ -234,16 +230,23 @@ class ParamsWindow():
 		thresholdField.grid(row = 4, column = 1, padx = "0 10", pady = "5 10")
 
 	def addParamsButtons(self):
-		paramsButtonsFrame = Frame(paramsWindow)
+		paramsButtonsFrame = Frame(self.window)
 		paramsButtonsFrame.grid(row = 1, column = 0)
 		paramsButtonsFrame.config(bg = "white")
 
-		enterButton = Button(paramsButtonsFrame, text = "Enter", font = ("Sans Serif", 8, "bold"), fg = "white", bg = "cyan4", activebackground = "cyan")
-		cancelButton = Button(paramsButtonsFrame, text = "Cancel", font = ("Sans Serif", 8, "bold"), fg = "white", bg = "red", activebackground = "orange red")
+		enterButton = Button(paramsButtonsFrame, text = "Enter", font = ("Sans Serif", 8, "bold"), fg = "white", bg = "cyan4", activebackground = "cyan", command=self.updateParams)
+		cancelButton = Button(paramsButtonsFrame, text = "Cancel", font = ("Sans Serif", 8, "bold"), fg = "white", bg = "red", activebackground = "orange red", command=self.window.withdraw)
 
 		enterButton.grid(row = 0, column = 0, padx = "0 10", pady = 10)
 		cancelButton.grid(row = 0, column = 1, pady = 10)
 
 	def updateParams(self):
 		# read from fields and send to encodeDecode.py and hide ParamsWindow
+		self.window.withdraw()
 		return 0
+
+if __name__ == "__main__":
+
+	app = MainWindow(None)
+	app.title("OpComms System IV Desktop Client")
+	app.mainloop()
