@@ -2,6 +2,9 @@ from tkinter import *
 from threading import *
 from time import *
 
+# To Do (Elizabeth):
+	# initialize Toplevel in terms of self (not root)
+
 class MainWindow(Tk):
 	def __init__(self, parent):
 		Tk.__init__(self, parent)
@@ -15,6 +18,7 @@ class MainWindow(Tk):
 		self.receiveFrame()
 		self.optionsFrame()
 		self.update_idletasks()
+		self.receiveText.insert(END, "Hello!")
 
 		self.align = AlignWindow(self)
 		self.align.window.title("Align Node")
@@ -24,13 +28,12 @@ class MainWindow(Tk):
 		self.params.window.title("Set PPM Parameters")
 		self.params.window.withdraw()
 
-		 #put checkMyEmail() in its own thread
-
+		self.messageChecker = MessageThread(1, "Thread-1", self)
+		self.messageChecker.start()
 		self.openAlign()
 
 	def transmitFrame(self):
 		'''Create Transmit Canvas and populate with label, entry box, and button'''
-		global transmitEntry
 
 		transmitFrame = Frame(self)
 		transmitFrame.grid(column=0, columnspan=2, row=0, rowspan=3)
@@ -38,29 +41,25 @@ class MainWindow(Tk):
 
 		transmitLabel = Label(transmitFrame, text="Transmit", font=("Sans Serif", 20, "bold"), fg="green", bg = "white")
 		transmitEntryLabel = Label(transmitFrame, text = "(Instructions for Transmit Input)", font = ("Times New Roman", 9), fg="black", bg = "white")
-		transmitEntry = Entry(transmitFrame, width=30, fg="green", highlightthickness = 2, highlightcolor = "green", highlightbackground = "light slate gray")
-		transmitButton = Button(transmitFrame, text="SEND", font=("Arial", 8, "bold"), fg="white", bg="green", activebackground = "DarkGreen")
+		self.transmitEntry = Entry(transmitFrame, width=30, fg="green", highlightthickness = 2, highlightcolor = "green", highlightbackground = "light slate gray")
+		transmitButton = Button(transmitFrame, text="SEND", font=("Arial", 8, "bold"), fg="white", bg="green", activebackground = "DarkGreen", command=self.transmit)
 
 		transmitLabel.pack(pady= '10 0')
 		transmitEntryLabel.pack(padx = 10, pady = "35 10")
-		transmitEntry.pack(padx = 10)
+		self.transmitEntry.pack(padx = 10)
 		transmitButton.pack(pady = 10)
-
-		transmitButton.bind('<Transmit_Button>',self.transmit())
 
 	def receiveFrame(self):
 		'''Create Receive Canvas and populate with label and entry box'''
-		global receiveText
-
 		receiveFrame = Frame(self)
 		receiveFrame.grid(column=2, columnspan=2, row=0, rowspan=6)
 		receiveFrame.config(bg = "white")
 
 		receiveLabel = Label(receiveFrame, text="Receive", font=("Sans Serif", 20, "bold"), fg="blue", bg = "white")
-		receiveText = Text(receiveFrame, width = 30, height = 10, fg = "blue", highlightthickness = 2, highlightcolor = "blue", highlightbackground = "light slate gray")
+		self.receiveText = Text(receiveFrame, width = 30, height = 10, fg = "blue", highlightthickness = 2, highlightcolor = "blue", highlightbackground = "light slate gray")
 
 		receiveLabel.pack(pady="10 0")
-		receiveText.pack(padx = 10, pady = 10)
+		self.receiveText.pack(padx = 10, pady = 10)
 
 	def optionsFrame(self):
 		'''Create Options Canvas and populate with buttons'''
@@ -74,39 +73,53 @@ class MainWindow(Tk):
 		alignButton.grid(column=0, row = 0, padx = 5, pady = "0 10")
 		paramsButton.grid(column=1, row = 0, padx = 5, pady = "0 10")
 
-	def setMessage(self, message):
-		# prints to receive console
-		return 0
-
 	def transmit(self):
-		# blocks checkMyEmail
+		self.messageChecker.paused = True
 		# calls send(whatever's in transmit box) method in encodeDecode.py
-		# unblocks checkMyEmail
-		return 0
+		self.messageChecker.paused = False
 
 	def openAlign(self):
-		# blocks checkMyEmail
-
+		self.messageChecker.paused = True
 		self.align.window.deiconify()
+
+		while not self.align.window.state() == "withdrawn":
+			sleep(0.001)
 		
-		# waits until alignWindow closed
-		# unblocks checkMyEmail
-		return 0;
+		self.messageChecker.paused = False
 
 	def openParams(self):
-		# blocks checkMyEmail
-
+		self.messageChecker.paused = True
 		self.params.window.deiconify()
 
-		# waits until paramsWindow closed
-		# unblocks checkMyEmail
-		return 0
+		while not self.params.window.state() == "withdrawn":
+			sleep(0.001)
+
+		self.messageChecker.paused = False
 
 	def checkMyEmail(self):
-		# runs continuously in another thread after alignWindow hidden:
+		self.receiveText.insert(END, "Checking...")
 			# call receive in encodeDecode.py
-			# if message found, setMessage(output of encodeDecode.py)
-			return 0
+			# if message found, set message (output of encodeDecode.py)
+
+class MessageThread(Thread):
+	def __init__(self, threadID, name, caller):
+		'''creates a MessageThread object with attributes threadID, name, and running state'''
+		Thread.__init__(self)
+		self.threadID = threadID
+		self.name = name
+		self.caller = caller
+
+		self.paused = False
+		self.killed = False
+
+	def run(self):
+		'''animates points from the two data queues'''
+		while self.killed == False:
+			if self.paused == False:
+				self.caller.checkMyEmail()
+			else:
+				self.caller.receiveText.insert(END, "Paused")
+			sleep(0.001)
 
 class AlignWindow(Tk):
 	def __init__(self, parent):
