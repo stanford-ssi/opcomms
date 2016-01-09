@@ -28,8 +28,8 @@ class MainWindow(Tk):
 		self.params.window.title("Set PPM Parameters")
 		self.params.window.withdraw()
 
-		self.messageChecker = MessageThread(1, "Thread-1", self)
-		self.messageChecker.start()
+		#self.messageChecker = MessageThread(1, "Thread-1", self)
+		#self.messageChecker.start()
 		self.openAlign()
 
 	def transmitFrame(self):
@@ -74,27 +74,29 @@ class MainWindow(Tk):
 		paramsButton.grid(column=1, row = 0, padx = 5, pady = "0 10")
 
 	def transmit(self):
-		self.messageChecker.paused = True
+		#self.messageChecker.paused = True
 		# calls send(whatever's in transmit box) method in encodeDecode.py
-		self.messageChecker.paused = False
+		#self.messageChecker.paused = False
+
+		return 0
 
 	def openAlign(self):
-		self.messageChecker.paused = True
+		#self.messageChecker.paused = True
 		self.align.window.deiconify()
 
-		while not self.align.window.state() == "withdrawn":
-			sleep(0.001)
+		#while not self.align.window.state() == "withdrawn":
+		#	sleep(0.001)
 		
-		self.messageChecker.paused = False
+		#self.messageChecker.paused = False
 
 	def openParams(self):
-		self.messageChecker.paused = True
+		#self.messageChecker.paused = True
 		self.params.window.deiconify()
 
-		while not self.params.window.state() == "withdrawn":
-			sleep(0.001)
+		#while not self.params.window.state() == "withdrawn":
+		#	sleep(0.001)
 
-		self.messageChecker.paused = False
+		#self.messageChecker.paused = False
 
 	def checkMyEmail(self):
 		self.receiveText.insert(END, "Checking...")
@@ -116,9 +118,11 @@ class MessageThread(Thread):
 		'''animates points from the two data queues'''
 		while self.killed == False:
 			if self.paused == False:
-				self.caller.checkMyEmail()
+				a = 0
+				#self.caller.checkMyEmail()
 			else:
-				self.caller.receiveText.insert(END, "Paused")
+				#self.caller.receiveText.insert(END, "Paused")
+				a = 1
 			sleep(0.001)
 
 class AlignWindow(Tk):
