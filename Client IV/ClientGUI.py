@@ -136,7 +136,7 @@ class AlignWindow(Tk):
 		# target GPS box, "virtual oscilloscope"
 	def populateAlignWindow(self):
 		self.addGPSEntry()
-		self.addVirtualOscope()
+		self.addSensorControls()
 		self.addControlButtons()
 
 	def addGPSEntry(self):
@@ -162,14 +162,80 @@ class AlignWindow(Tk):
 		longitudeLabel.grid(row = 2, column = 1)
 		altitudeLabel.grid(row = 2, column = 2) 
 
-	def addVirtualOscope(self):
-		oscopeFrame = Frame(self.window)
-		oscopeFrame.grid(row=1, column = 0)
-		oscopeFrame.config(bg = "white")
+	def addSensorControls(self):
+		sensorControlsFrame = Frame(self.window)
+		sensorControlsFrame.grid(row=1, column = 0)
+		sensorControlsFrame.config(bg = "white")
 
-		oscopeLabel = Label(oscopeFrame, text = "Photodiode Output", font = ("Sans Serif", 12, "bold"), bg = "white")
-		oscopeLabel.pack(pady = 10)
- 
+		oscopeLabel = Label(sensorControlsFrame, text = "Photodiode Output", font = ("Sans Serif", 12, "bold"), bg = "white")
+		#oscopeLabel.pack(pady = 10)
+		oscope = Canvas(sensorControlsFrame, width = 400, height = 300, bg = "black")
+		controlArrows = Canvas(sensorControlsFrame, width = 100, height = 100, bg = "white")
+		angleDisplay = Canvas(sensorControlsFrame, width = 200, height = 300, bg = "white")
+	
+
+		oscopeLabel.grid(row = 1, column = 0)
+		oscope.grid(row = 2, column = 0)
+		controlArrows.grid(row = 2, column = 1, padx = 10)
+		angleDisplay.grid(row = 2, column = 2)
+
+		sensorControlsFrame.update_idletasks()
+
+		self.addControlArrows(controlArrows)
+		self.populateAngleDisplay(angleDisplay)
+
+	def addControlArrows(self, controlArrows):
+		width = controlArrows.winfo_width()
+		height = controlArrows.winfo_height()
+		padding = 5
+		upArrow = controlArrows.create_polygon(width/2, 0, width/3 + padding, height/3 - padding, 2*width/3 - padding, height/3 - padding)
+		leftArrow = controlArrows.create_polygon(0, height/2, width/3 - padding, 2*height/3 - padding, width/3 - padding, height/3 + padding)
+		downArrow = controlArrows.create_polygon(width/2, height, 2*width/3 - padding, 2*height/3 + padding, width/3 + padding, 2*height/3 + padding)
+		rightArrow = controlArrows.create_polygon(width, height/2, 2*width/3 + padding, height/3 + padding, 2*width/3 + padding, 2*height/3 - padding)
+
+		upArrow.bind = ("<ButtonPress-1>", self.up_press)
+		upArrow.bind = ("<ButtonPress-1", self.up_release)
+		leftArrow.bind = ("<ButtonPress-1>", self.left_press)
+		leftArrow.bind = ("<ButtonPress-1", self.left_release)
+		downArrow.bind = ("<ButtonPress-1>", self.down_press)
+		downArrow.bind = ("<ButtonPress-1", self.down_release)
+		rightArrow.bind = ("<ButtonPress-1>", self.right_press)
+		rightArrow.bind = ("<ButtonPress-1", self.right_release)
+
+	def up_press(self, event):
+		self.configure(relief = "sunken")
+
+	def up_release(self, event):
+		self.configure(relief = "raised")
+
+	def left_press(self, event):
+		self.configure(relief = "sunken")
+
+	def left_release(self, event):
+		self.configure(relief = "raised")
+
+	def down_press(self, event):
+		self.configure(relief = "sunken")
+
+	def down_release(self, event):
+		self.configure(relief = "raised")
+
+	def right_press(self, event):
+		self.configure(relief = "sunken")
+
+	def right_release(self, event):
+		self.configure(relief = "raised")
+
+	
+	def populateAngleDisplay(self, angleDisplay):
+		width = angleDisplay.winfo_width()
+		print(width)
+		height = angleDisplay.winfo_height()
+		print(height)
+		diameter = 100
+		heightPadding = 50
+		angleDisplay.create_oval([(width-diameter)/2, heightPadding, (width-diameter)/2+diameter, heightPadding+diameter])
+
 	def addControlButtons(self):
 		controlButtonsFrame = Frame(self.window)
 		controlButtonsFrame.grid(row = 2, column = 0)
