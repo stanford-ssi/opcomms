@@ -192,6 +192,7 @@ class AlignWindow(Tk):
 		leftArrow = controlArrows.create_polygon(0, height/2, width/3 - padding, 2*height/3 - padding, width/3 - padding, height/3 + padding)
 		downArrow = controlArrows.create_polygon(width/2, height, 2*width/3 - padding, 2*height/3 + padding, width/3 + padding, 2*height/3 + padding)
 		rightArrow = controlArrows.create_polygon(width, height/2, 2*width/3 + padding, height/3 + padding, 2*width/3 + padding, 2*height/3 - padding)
+<<<<<<< HEAD
 
 		upArrow.bind = ("<ButtonPress-1>", self.up_press)
 		upArrow.bind = ("<ButtonPress-1", self.up_release)
@@ -236,6 +237,17 @@ class AlignWindow(Tk):
 		heightPadding = 50
 		angleDisplay.create_oval([(width-diameter)/2, heightPadding, (width-diameter)/2+diameter, heightPadding+diameter])
 
+=======
+	
+	def populateAngleDisplay(self, angleDisplay):
+		width = angleDisplay.winfo_width()
+		height = angleDisplay.winfo_height()
+		diameter = 100
+		heightPadding = 10
+		angleDisplay.create_oval([(width-diameter)/2, heightPadding, (width-diameter)/2+diameter, heightPadding+diameter], outline = "#9e9e9e")
+		angleDisplay.create_arc([(width-diameter)/2, height-(heightPadding+diameter), (width-diameter)/2+diameter, height-heightPadding], extent = 180, outline = "#9e9e9e")
+	
+>>>>>>> a07ed7dae8b5b56d89e1706c2281dc9e4a3d72dd
 	def addControlButtons(self):
 		controlButtonsFrame = Frame(self.window)
 		controlButtonsFrame.grid(row = 2, column = 0)
