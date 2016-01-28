@@ -2,16 +2,10 @@ from tkinter import *
 from threading import *
 from time import *
 
-# To Do (Elizabeth):
-	# initialize Toplevel in terms of self (not root)
-
 class MainWindow(Tk):
 	def __init__(self, parent):
 		Tk.__init__(self, parent)
 		self.parent = parent
-		# windowWidth = 800
-		# windowHeight = 600
-		# self.geometry('{}x{}'.format(windowWidth, windowHeight))
 		self.resizable(width=FALSE, height=FALSE)
 		self.config(bg = "white")
 		self.transmitFrame()
@@ -28,9 +22,7 @@ class MainWindow(Tk):
 		self.params.window.title("Set PPM Parameters")
 		self.params.window.withdraw()
 
-		#self.messageChecker = MessageThread(1, "Thread-1", self)
-		#self.messageChecker.start()
-		self.openAlign()
+		# self.openAlign()
 
 	def transmitFrame(self):
 		'''Create Transmit Canvas and populate with label, entry box, and button'''
@@ -74,56 +66,45 @@ class MainWindow(Tk):
 		paramsButton.grid(column=1, row = 0, padx = 5, pady = "0 10")
 
 	def transmit(self):
-		#self.messageChecker.paused = True
+		messageChecker.paused = True
 		# calls send(whatever's in transmit box) method in encodeDecode.py
-		#self.messageChecker.paused = False
+		messageChecker.paused = False
 
 		return 0
 
 	def openAlign(self):
-		#self.messageChecker.paused = True
+		messageChecker.paused = True
 		self.align.window.deiconify()
 
-		#while not self.align.window.state() == "withdrawn":
-		#	sleep(0.001)
-		
-		#self.messageChecker.paused = False
-
 	def openParams(self):
-		#self.messageChecker.paused = True
+		messageChecker.paused = True
 		self.params.window.deiconify()
 
-		#while not self.params.window.state() == "withdrawn":
-		#	sleep(0.001)
-
-		#self.messageChecker.paused = False
-
 	def checkMyEmail(self):
+		self.receiveText.delete(1.0, END)
 		self.receiveText.insert(END, "Checking...")
 			# call receive in encodeDecode.py
 			# if message found, set message (output of encodeDecode.py)
 
 class MessageThread(Thread):
-	def __init__(self, threadID, name, caller):
+	def __init__(self, threadID, name, parent):
 		'''creates a MessageThread object with attributes threadID, name, and running state'''
 		Thread.__init__(self)
 		self.threadID = threadID
 		self.name = name
-		self.caller = caller
+		self.parent = parent
 
-		self.paused = False
+		self.paused = True
 		self.killed = False
 
 	def run(self):
 		'''animates points from the two data queues'''
+		print("Starting MessageThread")
 		while self.killed == False:
 			if self.paused == False:
-				a = 0
-				#self.caller.checkMyEmail()
-			else:
-				#self.caller.receiveText.insert(END, "Paused")
-				a = 1
-			sleep(0.001)
+				self.parent.window.checkMyEmail()
+			sleep(0.1)
+
 
 class AlignWindow(Tk):
 	def __init__(self, parent):
@@ -134,6 +115,7 @@ class AlignWindow(Tk):
 		self.populateAlignWindow()
 
 		# target GPS box, "virtual oscilloscope"
+
 	def populateAlignWindow(self):
 		self.addGPSEntry()
 		self.addSensorControls()
@@ -192,16 +174,15 @@ class AlignWindow(Tk):
 		leftArrow = controlArrows.create_polygon(0, height/2, width/3 - padding, 2*height/3 - padding, width/3 - padding, height/3 + padding)
 		downArrow = controlArrows.create_polygon(width/2, height, 2*width/3 - padding, 2*height/3 + padding, width/3 + padding, 2*height/3 + padding)
 		rightArrow = controlArrows.create_polygon(width, height/2, 2*width/3 + padding, height/3 + padding, 2*width/3 + padding, 2*height/3 - padding)
-<<<<<<< HEAD
 
-		upArrow.bind = ("<ButtonPress-1>", self.up_press)
-		upArrow.bind = ("<ButtonPress-1", self.up_release)
-		leftArrow.bind = ("<ButtonPress-1>", self.left_press)
-		leftArrow.bind = ("<ButtonPress-1", self.left_release)
-		downArrow.bind = ("<ButtonPress-1>", self.down_press)
-		downArrow.bind = ("<ButtonPress-1", self.down_release)
-		rightArrow.bind = ("<ButtonPress-1>", self.right_press)
-		rightArrow.bind = ("<ButtonPress-1", self.right_release)
+		# upArrow.bind = ("<ButtonPress-1>", self.up_press)
+		# upArrow.bind = ("<ButtonPress-1", self.up_release)
+		# leftArrow.bind = ("<ButtonPress-1>", self.left_press)
+		# leftArrow.bind = ("<ButtonPress-1", self.left_release)
+		# downArrow.bind = ("<ButtonPress-1>", self.down_press)
+		# downArrow.bind = ("<ButtonPress-1", self.down_release)
+		# rightArrow.bind = ("<ButtonPress-1>", self.right_press)
+		# rightArrow.bind = ("<ButtonPress-1", self.right_release)
 
 	def up_press(self, event):
 		self.configure(relief = "sunken")
@@ -237,7 +218,6 @@ class AlignWindow(Tk):
 		heightPadding = 50
 		angleDisplay.create_oval([(width-diameter)/2, heightPadding, (width-diameter)/2+diameter, heightPadding+diameter])
 
-=======
 	
 	def populateAngleDisplay(self, angleDisplay):
 		width = angleDisplay.winfo_width()
@@ -247,7 +227,6 @@ class AlignWindow(Tk):
 		angleDisplay.create_oval([(width-diameter)/2, heightPadding, (width-diameter)/2+diameter, heightPadding+diameter], outline = "#9e9e9e")
 		angleDisplay.create_arc([(width-diameter)/2, height-(heightPadding+diameter), (width-diameter)/2+diameter, height-heightPadding], extent = 180, outline = "#9e9e9e")
 	
->>>>>>> a07ed7dae8b5b56d89e1706c2281dc9e4a3d72dd
 	def addControlButtons(self):
 		controlButtonsFrame = Frame(self.window)
 		controlButtonsFrame.grid(row = 2, column = 0)
@@ -280,6 +259,7 @@ class AlignWindow(Tk):
 
 	def close(self):
 		self.window.withdraw()
+		messageChecker.paused = False
 
 	def setFinished(self):
 		# boolean: alignment complete
@@ -330,7 +310,7 @@ class ParamsWindow():
 		paramsButtonsFrame.config(bg = "white")
 
 		enterButton = Button(paramsButtonsFrame, text = "Enter", font = ("Sans Serif", 8, "bold"), fg = "white", bg = "cyan4", activebackground = "cyan", command=self.updateParams)
-		cancelButton = Button(paramsButtonsFrame, text = "Cancel", font = ("Sans Serif", 8, "bold"), fg = "white", bg = "red", activebackground = "orange red", command=self.window.withdraw)
+		cancelButton = Button(paramsButtonsFrame, text = "Cancel", font = ("Sans Serif", 8, "bold"), fg = "white", bg = "red", activebackground = "orange red", command=self.close)
 
 		enterButton.grid(row = 0, column = 0, padx = "0 10", pady = 10)
 		cancelButton.grid(row = 0, column = 1, pady = 10)
@@ -338,10 +318,32 @@ class ParamsWindow():
 	def updateParams(self):
 		# read from fields and send to encodeDecode.py and hide ParamsWindow
 		self.window.withdraw()
-		return 0
+		messageChecker.paused = False
+
+	def close(self):
+		self.window.withdraw()
+		messageChecker.paused = False
+
+class MainThread(Thread):
+	def __init__(self, threadID, name):
+		'''creates a MessageThread object with attributes threadID, name, and running state'''
+		Thread.__init__(self)
+		self.threadID = threadID
+		self.name = name
+		self.window = MainWindow(None)
+		self.window.title("OpComms System IV Desktop Client")
+
+	def run(self):
+		print("Starting MainThread")
 
 if __name__ == "__main__":
+	app = MainThread(2, "Thread-2")
+	messageChecker = MessageThread(1, "Thread-1", app)
 
-	app = MainWindow(None)
-	app.title("OpComms System IV Desktop Client")
-	app.mainloop()
+	messageChecker.start()
+	app.start()
+	app.window.openAlign()
+	app.window.mainloop() # I'm not clear on why this needs to be done outside the thread's run method, but it seem like it does 
+
+	messageChecker.killed = True
+
