@@ -2,6 +2,8 @@ from tkinter import *
 from threading import *
 from time import *
 
+# import align
+
 class MainWindow(Tk):
 	def __init__(self, parent):
 		Tk.__init__(self, parent)
@@ -21,8 +23,6 @@ class MainWindow(Tk):
 		self.params = ParamsWindow(self)
 		self.params.window.title("Set PPM Parameters")
 		self.params.window.withdraw()
-
-		# self.openAlign()
 
 	def transmitFrame(self):
 		'''Create Transmit Canvas and populate with label, entry box, and button'''
@@ -86,35 +86,16 @@ class MainWindow(Tk):
 			# call receive in encodeDecode.py
 			# if message found, set message (output of encodeDecode.py)
 
-class MessageThread(Thread):
-	def __init__(self, threadID, name, parent):
-		'''creates a MessageThread object with attributes threadID, name, and running state'''
-		Thread.__init__(self)
-		self.threadID = threadID
-		self.name = name
-		self.parent = parent
-
-		self.paused = True
-		self.killed = False
-
-	def run(self):
-		'''animates points from the two data queues'''
-		print("Starting MessageThread")
-		while self.killed == False:
-			if self.paused == False:
-				self.parent.window.checkMyEmail()
-			sleep(0.1)
-
-
 class AlignWindow(Tk):
 	def __init__(self, parent):
 		self.parent = parent
 		self.window = Toplevel()
 		self.window.resizable(width=FALSE, height=FALSE)
 		self.window.config(bg = "white")
-		self.populateAlignWindow()
 
-		# target GPS box, "virtual oscilloscope"
+		self.homeGPS = [37.424157, -122.177866, 150] # latitude, longitude, altitude
+		self.targetGPS = [37.424928, -122.176934, 100] # latitude, longitude, altitude
+		self.populateAlignWindow()
 
 	def populateAlignWindow(self):
 		self.addGPSEntry()
@@ -127,22 +108,35 @@ class AlignWindow(Tk):
 		GPSEntryFrame.config(bg = "white")
 
 		GPSLabel = Label(GPSEntryFrame, text="Input GPS coordinates in decimal degrees", font=("Sans Serif", 12, "bold"), bg = "white")
-		latitudeField = Entry(GPSEntryFrame, highlightthickness = 2, highlightcolor = "purple4", highlightbackground = "light slate gray")
-		longitudeField = Entry(GPSEntryFrame, highlightthickness = 2, highlightcolor = "purple4", highlightbackground = "light slate gray")
-		altitudeField = Entry(GPSEntryFrame, highlightthickness = 2, highlightcolor = "purple4", highlightbackground = "light slate gray")
+		homeLabel = Label(GPSEntryFrame, text="HOME:", font=("Sans Serif", 12, "bold"), bg = "white")
+		targetLabel = Label(GPSEntryFrame, text="TARGET:", font=("Sans Serif", 12, "bold"), bg = "white")
+
+		self.homeLatField = Entry(GPSEntryFrame, highlightthickness = 2, highlightcolor = "purple4", highlightbackground = "light slate gray")
+		self.homeLongField = Entry(GPSEntryFrame, highlightthickness = 2, highlightcolor = "purple4", highlightbackground = "light slate gray")
+		self.homeAltField = Entry(GPSEntryFrame, highlightthickness = 2, highlightcolor = "purple4", highlightbackground = "light slate gray")
+		self.targetLatField = Entry(GPSEntryFrame, highlightthickness = 2, highlightcolor = "purple4", highlightbackground = "light slate gray")
+		self.targetLongField = Entry(GPSEntryFrame, highlightthickness = 2, highlightcolor = "purple4", highlightbackground = "light slate gray")
+		self.targetAltField = Entry(GPSEntryFrame, highlightthickness = 2, highlightcolor = "purple4", highlightbackground = "light slate gray")
 		latitudeLabel = Label(GPSEntryFrame, text="Latitude", font=("Sans Serif", 10, "bold"), bg = "white")
 		longitudeLabel = Label(GPSEntryFrame, text="Longitude", font=("Sans Serif", 10, "bold"), bg = "white")
 		altitudeLabel = Label(GPSEntryFrame, text = "Altitude", font=("Sans Serif", 10, "bold"), bg = "white")
-		GPSButton = Button(GPSEntryFrame, text = "Enter Coordinates", font = ("Sans Serif", 10, "bold"), fg = "white", bg = "purple4", activebackground = "purple")
+		GPSButton = Button(GPSEntryFrame, text = "Enter Coordinates", font = ("Sans Serif", 10, "bold"), fg = "white", bg = "purple4", activebackground = "purple", command=self.setGPS)
 
 		GPSLabel.grid(row = 0, column = 0, columnspan = 4, pady  = "10 0")
-		latitudeField.grid(row = 1, column = 0, padx = "10 5", pady =  "10 0")
-		longitudeField.grid(row = 1, column = 1, padx = 5, pady = "10 0")
-		altitudeField.grid(row = 1, column = 2, padx = 5, pady = "10 0")
-		GPSButton.grid(row = 1, column = 3, padx = "5 10", pady = "10 0")
-		latitudeLabel.grid(row = 2, column = 0)
-		longitudeLabel.grid(row = 2, column = 1)
-		altitudeLabel.grid(row = 2, column = 2) 
+		homeLabel.grid(row = 1, column = 0, pady =  "10 0")
+		self.homeLatField.grid(row = 1, column = 1, padx = "10 5", pady =  "10 0")
+		self.homeLongField.grid(row = 1, column = 2, padx = 5, pady = "10 0")
+		self.homeAltField.grid(row = 1, column = 3, padx = 5, pady = "10 0")
+		targetLabel.grid(row = 2, column = 0, pady =  "10 0")
+		self.targetLatField.grid(row = 2, column = 1, padx = "10 5", pady =  "10 0")
+		self.targetLongField.grid(row = 2, column = 2, padx = 5, pady = "10 0")
+		self.targetAltField.grid(row = 2, column = 3, padx = 5, pady = "10 0")
+		GPSButton.grid(row = 1, column = 4, rowspan=2, padx = "5 10", pady = "10 0")
+		latitudeLabel.grid(row = 3, column = 1)
+		longitudeLabel.grid(row = 3, column = 2)
+		altitudeLabel.grid(row = 3, column = 3)
+
+		self.populateGPSFieldsFromStored()
 
 	def addSensorControls(self):
 		sensorControlsFrame = Frame(self.window)
@@ -208,7 +202,6 @@ class AlignWindow(Tk):
 	def right_release(self, event):
 		self.configure(relief = "raised")
 
-	
 	def populateAngleDisplay(self, angleDisplay):
 		width = angleDisplay.winfo_width()
 		print(width)
@@ -218,7 +211,6 @@ class AlignWindow(Tk):
 		heightPadding = 50
 		angleDisplay.create_oval([(width-diameter)/2, heightPadding, (width-diameter)/2+diameter, heightPadding+diameter])
 
-	
 	def populateAngleDisplay(self, angleDisplay):
 		width = angleDisplay.winfo_width()
 		height = angleDisplay.winfo_height()
@@ -235,18 +227,38 @@ class AlignWindow(Tk):
 		startButton = Button(controlButtonsFrame, text = "Start", font = ("Sans Serif", 8, "bold"), fg = "white", bg = "DarkGreen", activebackground = "green")
 		bigRedButton = Button(controlButtonsFrame, text = "Stop", font = ("Sans Serif", 8, "bold"), fg = "white", bg = "red", activebackground = "orange red")
 		closeButton = Button(controlButtonsFrame, text = "Close", font = ("Sans Serif", 8, "bold"), fg = "white", bg = "cyan4", activebackground = "cyan", command=self.close)
-		
 
 		startButton.grid(row = 0, column = 0, pady = "0 10")
 		bigRedButton.grid(row = 0, column = 1, padx = 10, pady = "0 10")
 		closeButton.grid(row = 0, column = 2, pady = "0 10")
 
+	def populateGPSFieldsFromStored(self):
+		self.homeLatField.delete(0, END)
+		self.homeLongField.delete(0, END)
+		self.homeAltField.delete(0, END)
+		self.targetLatField.delete(0, END)
+		self.targetLongField.delete(0, END)
+		self.targetAltField.delete(0, END)
+
+		self.homeLatField.insert(0, self.homeGPS[0])
+		self.homeLongField.insert(0, self.homeGPS[1])
+		self.homeAltField.insert(0, self.homeGPS[2])
+		self.targetLatField.insert(0, self.targetGPS[0])
+		self.targetLongField.insert(0, self.targetGPS[1])
+		self.targetAltField.insert(0, self.targetGPS[2])
+
 	def setGPS(self):
-		# set target GPS locally
-		return 0
+		self.homeGPS[0] = self.homeLatField.get()
+		self.homeGPS[1] = self.homeLongField.get()
+		self.homeGPS[2] = self.homeAltField.get()
+		self.targetGPS[0] = self.targetLatField.get()
+		self.targetGPS[1] = self.targetLongField.get()
+		self.targetGPS[2] = self.targetAltField.get()
 
 	def start(self):
-		# send target GPS and AlignWindow object to align.py to start alignment procedure
+		#self.alignment = AlignThread(3, "Align_Thread", self)
+		#self.alignment.start()
+
 		return 0
 
 	def plot(self, diodeData):
@@ -254,10 +266,12 @@ class AlignWindow(Tk):
 		return 0
 
 	def stop(self):
-		# stop thread in which start() in align.py is running
+		#if self.alignment.isAlive():
+		#	alignment.killed = True
 		return 0
 
 	def close(self):
+		self.populateGPSFieldsFromStored()
 		self.window.withdraw()
 		messageChecker.paused = False
 
@@ -271,8 +285,9 @@ class ParamsWindow():
 		self.window = Toplevel()
 		self.window.resizable(width=FALSE, height=FALSE)
 		self.window.config(bg = "white")
+		
+		self.values = [4, 1000, 1000, 5] # fields: PPM-level, pulse length, sample rate, threshold
 		self.populateParamsWindow()
-		# fields: PPM-level, pulse length, sample rate, threshold
 
 	def populateParamsWindow(self):
 		self.addParamsFields()
@@ -289,20 +304,22 @@ class ParamsWindow():
 		sampleRateLabel = Label(paramsFieldsFrame, text = "Sample Rate", font = ("Sans Serif", 10, "bold"), bg = "white")
 		thresholdLabel = Label(paramsFieldsFrame, text = "Threshold", font = ("Sans Serif", 10, "bold"), bg = "white")
 
-		ppmLevelField = Entry(paramsFieldsFrame, highlightthickness = 2, highlightcolor = "cyan4", highlightbackground = "light slate gray")
-		pulseLengthField = Entry(paramsFieldsFrame, highlightthickness = 2, highlightcolor = "cyan4", highlightbackground = "light slate gray")
-		sampleRateField = Entry(paramsFieldsFrame, highlightthickness = 2, highlightcolor = "cyan4", highlightbackground = "light slate gray")
-		thresholdField = Entry(paramsFieldsFrame, highlightthickness = 2, highlightcolor = "cyan4", highlightbackground = "light slate gray")
+		self.ppmLevelField = Entry(paramsFieldsFrame, highlightthickness = 2, highlightcolor = "cyan4", highlightbackground = "light slate gray")
+		self.pulseLengthField = Entry(paramsFieldsFrame, highlightthickness = 2, highlightcolor = "cyan4", highlightbackground = "light slate gray")
+		self.sampleRateField = Entry(paramsFieldsFrame, highlightthickness = 2, highlightcolor = "cyan4", highlightbackground = "light slate gray")
+		self.thresholdField = Entry(paramsFieldsFrame, highlightthickness = 2, highlightcolor = "cyan4", highlightbackground = "light slate gray")
+
+		self.populateFieldsFromStored()
 
 		parametersTitle.grid(row = 0, column = 0, columnspan = 2)
 		ppmLevelLabel.grid(row = 1, column = 0, padx =  10, pady = "10 5")
-		ppmLevelField.grid(row = 1, column = 1, padx = "0 10", pady = "10 5")
+		self.ppmLevelField.grid(row = 1, column = 1, padx = "0 10", pady = "10 5")
 		pulseLengthLabel.grid(row = 2, column = 0, padx = 10, pady = 5)
-		pulseLengthField.grid(row = 2, column = 1, padx = "0 10", pady =  5)
+		self.pulseLengthField.grid(row = 2, column = 1, padx = "0 10", pady =  5)
 		sampleRateLabel.grid(row = 3, column = 0, padx = 10, pady = 5)
-		sampleRateField.grid(row = 3, column = 1, padx = "0 10", pady = 5)
+		self.sampleRateField.grid(row = 3, column = 1, padx = "0 10", pady = 5)
 		thresholdLabel.grid(row = 4, column = 0, padx = 10, pady = "5 10")
-		thresholdField.grid(row = 4, column = 1, padx = "0 10", pady = "5 10")
+		self.thresholdField.grid(row = 4, column = 1, padx = "0 10", pady = "5 10")
 
 	def addParamsButtons(self):
 		paramsButtonsFrame = Frame(self.window)
@@ -315,18 +332,33 @@ class ParamsWindow():
 		enterButton.grid(row = 0, column = 0, padx = "0 10", pady = 10)
 		cancelButton.grid(row = 0, column = 1, pady = 10)
 
+	def populateFieldsFromStored(self):
+		self.ppmLevelField.delete(0, END)
+		self.ppmLevelField.insert(0, self.values[0])
+		self.pulseLengthField.delete(0, END)
+		self.pulseLengthField.insert(0, self.values[1])
+		self.sampleRateField.delete(0, END)
+		self.sampleRateField.insert(0, self.values[2])
+		self.thresholdField.delete(0, END)
+		self.thresholdField.insert(0, self.values[3])
+
 	def updateParams(self):
-		# read from fields and send to encodeDecode.py and hide ParamsWindow
+		self.values[0] = self.ppmLevelField.get()
+		self.values[1] = self.pulseLengthField.get()
+		self.values[2] = self.sampleRateField.get()
+		self.values[3] = self.thresholdField.get()
+
 		self.window.withdraw()
 		messageChecker.paused = False
 
 	def close(self):
+		self.populateFieldsFromStored()
 		self.window.withdraw()
 		messageChecker.paused = False
 
 class MainThread(Thread):
 	def __init__(self, threadID, name):
-		'''creates a MessageThread object with attributes threadID, name, and running state'''
+		'''creates a MainThread object with attributes threadID, name, and running state'''
 		Thread.__init__(self)
 		self.threadID = threadID
 		self.name = name
@@ -334,11 +366,42 @@ class MainThread(Thread):
 		self.window.title("OpComms System IV Desktop Client")
 
 	def run(self):
-		print("Starting MainThread")
+		return 0
+
+class MessageThread(Thread):
+	def __init__(self, threadID, name, parent):
+		'''creates a MessageThread object with attributes threadID, name, and running state'''
+		Thread.__init__(self)
+		self.threadID = threadID
+		self.name = name
+		self.parent = parent
+
+		self.paused = True
+		self.killed = False
+
+	def run(self):
+		while self.killed == False:
+			if self.paused == False:
+				self.parent.window.checkMyEmail()
+			sleep(0.1)
+
+class AlignThread(Thread):  # How do I kill this in the middle of running functions?!  ...talk to Jake about making objects?
+	def __init__(self, threadID, name, parent):
+		'''creates an AlignThread object with attributes threadID, name, and running state'''
+		Thread.__init__(self)
+		self.threadID = threadID
+		self.name = name
+		self.parent = parent
+
+		self.killed = False
+
+	def run(self):
+		align.roughAlign(HOME, targetGPS)
+		align.lockOn(threshold, initialSpread)
 
 if __name__ == "__main__":
-	app = MainThread(2, "Thread-2")
-	messageChecker = MessageThread(1, "Thread-1", app)
+	app = MainThread(2, "Main_Thread")
+	messageChecker = MessageThread(1, "Message_Thread", app)
 
 	messageChecker.start()
 	app.start()

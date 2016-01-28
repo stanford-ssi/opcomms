@@ -1,5 +1,3 @@
-<<<<<<< HEAD
-=======
 #Auto-align for the opcomms unit.
 #Written by Jake Hillard, copyright 2016, licensed under the MIT open-software license.
 #
@@ -179,4 +177,3 @@ def roughAlign(p1,p2):
 
 
 setSpeed(7);
->>>>>>> 66640fe... Added Cross Auto Align
