@@ -14,9 +14,23 @@
 #    *laser.On() & laser.Off() Turning the laser on and off. 
 
 import math
+import serial
 
 global CENTER;
 global RADIUS;
+global SER;
+
+global left; left = "L"
+global right; right  = "R"
+global up; up  = "U"
+global down; down = "D"
+
+
+
+deviceName = '/dev/something'
+SER = serial.Serial(deviceName, baudrate = 250000);
+SER.open();
+
 RADIUS = 6.371E6 #Earth radius in meters.
 CENTER = [0,0];
 
@@ -45,12 +59,82 @@ def getDistance(p1,p2):
 def getPointStrength(rightAzimuth, Ascension): #All kinds of assumptions being made here
     reciever.moveAbsolute(rightAzimuth, Ascension) #Assumes coordinates are absolute
     laser.on();
+    #sig = input("Manual Signal Strength: ");
     sig = wifiLink.getPartnerSensor();
     laser.off();
     return si
 
-def spiral(sigma, numPoints = 100, numRevolutions = 5): #Executes a spiral pattern  
+
+def moveLeft():
+    SER.write(left);
+
+def moveRight():
+    SER.write(right);
+
+def moveUp():
+    SER.write(up);
+
+def moveDown():
+    SER.write(down);
+
+def setSpeed( speed ):
+    SER.write(speed)
+
+
+def gPosition( coordinates ):
+    transmit = "G" + str(coordinates[0]) + "," + str(coordinates[1]);
+    SER.write(transmit);
+
+def parseSerial(recieved):
+    t = recieved.split(" ");
+    return [int(t[1]), int(t[2]), int(t[0]) ];
+
+def recieverCrossOptimize():
+    global SER;
+    signalStrength = 0
+    Azimuth = 0;
+    Ascension = 0;
+    
+
+    delay = 0.05; 
+    maxSig = [0, 0, 0];
+    numBytes = 4;
+       #Sig Strength, Azimuth, Ascension
+    
+    moveLeft();
+    for i in range (1,100):
+        currSig = parseSerial( SER.read(numBytes));
+        if currSig[0] > maxSig[0]: maxSig = currSig[:]; 
+        time.sleep(delay)
+    moveRight();
+    for i in range (1,200):
+        currSig = parseSerial( SER.read(numBytes));
+        if currSig[0] > maxSig[0]: maxSig = currSig[:]; 
+        time.sleep(delay)
+
+    gPosition( [ maxSig[1], maxSig[2]] );
+    
+    moveUp();
+    for i in range (1,100):
+        currSig = parseSerial( SER.read(numBytes));
+        if currSig[0] > maxSig[0]: maxSig = currSig[:]; 
+        time.sleep(delay)
+    moveDown();
+    for i in range (1,200):
+        currSig = parseSerial( SER.read(numBytes));
+        if currSig[0] > maxSig[0]: maxSig = currSig[:]; 
+        time.sleep(delay)
+
+    gPosition( [ maxSig[1], maxSig[2]] );
+
+
+
+
+
+
+def spiral(sigma, numPoints = 100, numRevolutions = 5): #Executes a spiral pattern 
                        #and returns [sig, rightAzimuth, Ascension, pointNum] of maximum signal seen by partner
+    #For manual setting, use numPoints = 4, numRevolutions = 1;
     #Sigma is the spread factor. The spiral will sweep out within a cone of angle sigma.
     sigma = sigma/2; #Accounts for the fact that we are rotating about angle CENTER.
     w = 2*3.14159/numPoints*numRevolutions;
@@ -81,12 +165,15 @@ def roughAlign(p1,p2):
 
 
 
-     #Lat      , Long,      ,Alt
-p1 = [37.424928, -122.176934, 100];
-p2 = [37.424157, -122.177866, 150];
+#      #Lat      , Long,      ,Alt
+# p1 = [37.424928, -122.176934, 100];
+# p2 = [37.424157, -122.177866, 150];
 
-print("Azimuth: " + str(getAzimuth(p1,p2)/3.14159*180));
-print("Ascension: " + str(getAscension(p2,p1)/3.14159*180));
+# print("Azimuth: " + str(getAzimuth(p1,p2)/3.14159*180));
+# print("Ascension: " + str(getAscension(p2,p1)/3.14159*180));
 
-roughAlign(p1,p2);
-lockOn(threshold, 5*3.14159/180);
+# roughAlign(p1,p2);
+# lockOn(threshold, 5*3.14159/180);
+
+
+setSpeed(7);
