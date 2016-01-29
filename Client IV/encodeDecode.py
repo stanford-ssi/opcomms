@@ -17,22 +17,24 @@ def send(msg):
 def encode(msg):
     """ Encodes a message: adds checksum and compresses. Returns result """
     msg = toBytes(msg)
-    msg += bytes([hash(msg) % 256])
-    msg = compress(msg)
+    if options["use_cksum"]: msg += bytes([hash(msg) % 256])
+    if options["compress"]: msg = compress(msg)
     return msg
 
-RCV_NO_MSG = -2
+RCV_FAIL_DECODE = -2
 RCV_FAIL_DECOMPRESS = -1
 RCV_FAIL_CKSUM = 0
 RCV_SUCCESS = 1
+RCV_NO_MSG = 2
 def receive():
     """ 
     Checks for received message.
     Returns the status, which is one of the following, along with the message.
-        RCV_NO_MSG: No message received.
+        RCV_FAIL_DECODE: Could not decode unicode. 
         RCV_FAIL_DECOMPRESS: Message was too garbled to recover.
         RCV_FAIL_CKSUM: Message received but checksum failed.
-        RCV_SUCCESS: Message received, checksum confirmed.
+        RCV_NO_MSG: No message received.
+        RCV_SUCCESS: Message received.
     """
     msg = serialParser.checkMessage()
     if msg: return decode(msg)
@@ -43,26 +45,47 @@ def decode(msg):
     Decodes a message: decompresses and confirms checksum.
     See receive() for return statuses.
     """
-    try: msg = zlib.decompress(msg)
-    except: return RCV_FAIL_DECOMPRESS, 0
-    msg, cksum = msg[:-1], msg[-1]
-    return cksum == hash(msg) % 256, msg.decode()
+    if options["compress"]:
+        try: msg = zlib.decompress(msg)
+        except: return RCV_FAIL_DECOMPRESS, 0
+    if options["use_cksum"]: 
+        msg, cksum = msg[:-1], msg[-1]
+        ret_value = cksum == hash(msg) % 256
+    else: ret_value = RCV_SUCCESS
+    try: return cksum == hash(msg) % 256, msg.decode()
+    except: return RCV_FAIL_DECODE, 0
     
 def main():
     # Example: send
+    set_options(use_cksum=1, compress=1)
     send("testing")
     # Example: receive, print status and message
     status, msg = receive()
     if status == RCV_SUCCESS: 
-        print("Checksum confirmed")
+        print("Receive successful")
         print("Message: " + msg)
     elif status == RCV_FAIL_CKSUM:
         print("Checksum failed")
         print("Message: " + msg)
     elif status == RCV_FAIL_DECOMPRESS:
         print("Decompression failed")
+    elif status == RCV_FAIL_DECODE:
+        print("Decoding failed")
     else: # status == RCV_NO_MSG
         print("No message...")
+        
+options = {"use_cksum": 1, "compress": 0}
+        
+def set_options(**new_options): 
+    """ 
+    Allows functions outside this module to set various encode/decode options.
+    Possible arguments:
+        use_cksum: bool -- whether to attach a checksum to the message
+        compress: bool -- whether to compress message
+    """
+    for arg in new_options:
+        if arg in options: options[arg] = new_options[arg]
+        else: print("Warning: option " + arg + " does not exist")
         
 #---- Utility functions ----#
 

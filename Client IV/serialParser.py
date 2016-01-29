@@ -2,5 +2,5 @@
 
 # placeholder functions for testing
 last_msg = None
-def sendMessage(msg): global last_msg; last_msg = msg + b"a"
+def sendMessage(msg): global last_msg; last_msg = msg 
 def checkMessage(): return last_msg
