@@ -14,25 +14,30 @@
 #    *laser.On() & laser.Off() Turning the laser on and off. 
 
 import math
+import time
 import serial
 
-global CENTER;
-global RADIUS;
+global CENTER; CENTER = [0,0];
+global RADIUS; RADIUS = 6.371E6 #Earth radius in meters.
 global SER;
 
-global left; left = "L"
-global right; right  = "R"
-global up; up  = "U"
-global down; down = "D"
-
-
-
+global left; left = b"L"
+global right; right  = b"R"
+global up; up  = b"U"
+global down; down = b"D"
+global Query; Query = b"Q"
+global goto; goto = b"G"
 deviceName = '/dev/something'
-SER = serial.Serial(deviceName, baudrate = 250000);
-SER.open();
 
-RADIUS = 6.371E6 #Earth radius in meters.
-CENTER = [0,0];
+try:
+    try:
+        SER = serial.Serial('/dev/ttyACM1', baudrate = 250000)  # open serial port
+    except:
+        SER = serial.Serial('/dev/ttyACM0', baudrate = 250000)  # open serial port
+except: raise Exception("Couldn't auto-connect. Are we plugged in?");
+
+print("Teensy connected at " + SER.name)         # check which port was really used
+
 
 def getGPSAzimuth(p1,p2):
     #Returns an Azimuth angle (in radians) for p1 pointing at p2 starting from north.
@@ -56,6 +61,26 @@ def getGPSAscension(p1,p2): #Given two lists of GPS points, returns Ascension (i
 def getDistance(p1,p2):
     return math.sqrt( ((p1[0]-p2[0])*RADIUS)**2 + ((p1[1]-p2[1])*RADIUS)**2 );
 
+def getPosition():
+    t = query()
+    return [t[0], t[1]]
+
+
+
+def getSensor():
+    SER.flushInput()
+    SER.write(query)
+    temp = SER.readline()
+    return str(temp).split(" ")[-1].split("\\")[0]
+
+def goPosition(p1):
+    SER.write(goto+ bytes( str(p1[0]) + str(p1[1]), "UTF-8" )) 
+    while True:
+        t = SER.readline()
+        print(t)
+        if "Aligned" in str(t): break
+    
+
 def getPointStrength(rightAzimuth, Ascension): #All kinds of assumptions being made here
     reciever.moveAbsolute(rightAzimuth, Ascension) #Assumes coordinates are absolute
     laser.on();
@@ -77,17 +102,17 @@ def moveUp():
 def moveDown():
     SER.write(down);
 
-def setSpeed( speed ):
-    SER.write(speed)
+ 
 
+def query():
+    SER.flushInput()
+    SER.write(Query)
+    recieved = SER.readline()
+    t = str(recieved).split(" ");
+    return [int(t[0].split("'")[-1] ), int(t[1].split("'")[-1]), int( t[-1].split("\\")[0] ) ];
 
-def gPosition( coordinates ):
-    transmit = "G" + str(coordinates[0]) + "," + str(coordinates[1]);
-    SER.write(transmit);
-
-def parseSerial(recieved):
-    t = recieved.split(" ");
-    return [int(t[1]), int(t[2]), int(t[0]) ];
+def stop():
+    SER.write(b"X")
 
 def recieverCrossOptimize():
     global SER;
@@ -102,30 +127,34 @@ def recieverCrossOptimize():
        #Sig Strength, Azimuth, Ascension
     
     moveLeft();
-    for i in range (1,100):
-        currSig = parseSerial( SER.read(numBytes));
-        if currSig[0] > maxSig[0]: maxSig = currSig[:]; 
+    for i in range (1,50):
+        currSig = query();
+        if currSig[2] > maxSig[2]: maxSig = currSig[:];
+        print(currSig[2]) 
         time.sleep(delay)
     moveRight();
-    for i in range (1,200):
-        currSig = parseSerial( SER.read(numBytes));
-        if currSig[0] > maxSig[0]: maxSig = currSig[:]; 
+    for i in range (1,100):
+        currSig = query();
+        if currSig[2] > maxSig[2]: maxSig = currSig[:];
+        print(currSig[2]) 
         time.sleep(delay)
 
-    gPosition( [ maxSig[1], maxSig[2]] );
+    goPosition( [ maxSig[0], maxSig[1]] );
     
     moveUp();
-    for i in range (1,100):
-        currSig = parseSerial( SER.read(numBytes));
-        if currSig[0] > maxSig[0]: maxSig = currSig[:]; 
+    for i in range (1,25):
+        currSig = query();
+        if currSig[2] > maxSig[2]: maxSig = currSig[:]; 
+        print(currSig[2])
         time.sleep(delay)
     moveDown();
-    for i in range (1,200):
-        currSig = parseSerial( SER.read(numBytes));
-        if currSig[0] > maxSig[0]: maxSig = currSig[:]; 
+    for i in range (1,50):
+        currSig = query();
+        if currSig[2] > maxSig[2]: maxSig = currSig[:]; 
+        print(currSig[2])
         time.sleep(delay)
 
-    gPosition( [ maxSig[1], maxSig[2]] );
+    goPosition( [maxSig[0], maxSig[1]] );
 
 
 
@@ -133,7 +162,7 @@ def recieverCrossOptimize():
 
 
 def spiral(sigma, numPoints = 100, numRevolutions = 5): #Executes a spiral pattern 
-                       #and returns [sig, rightAzimuth, Ascension, pointNum] of maximum signal seen by partner
+    #and returns [sig, rightAzimuth, Ascension, pointNum] of maximum signal seen by partner
     #For manual setting, use numPoints = 4, numRevolutions = 1;
     #Sigma is the spread factor. The spiral will sweep out within a cone of angle sigma.
     sigma = sigma/2; #Accounts for the fact that we are rotating about angle CENTER.
@@ -161,7 +190,7 @@ def roughAlign(p1,p2):
     CENTER[0] = getGPSAzimuth(p1,p2);
     CENTER[1] = getGPSAscension(p1,p2);
     reciever.moveAbsolute(CENTER); #TODO, stub, how to actually move
-
+SER.write(b"7")
 
 
 
@@ -175,5 +204,3 @@ def roughAlign(p1,p2):
 # roughAlign(p1,p2);
 # lockOn(threshold, 5*3.14159/180);
 
-
-setSpeed(7);
