@@ -48,17 +48,15 @@ def decode(msg):
     if options["compress"]:
         try: msg = zlib.decompress(msg)
         except: return RCV_FAIL_DECOMPRESS, 0
-    if options["use_cksum"]: 
-        msg, cksum = msg[:-1], msg[-1]
-        ret_value = cksum == hash(msg) % 256
-    else: ret_value = RCV_SUCCESS
+    if options["use_cksum"]: msg, cksum = msg[:-1], msg[-1]
+    else: cksum = hash(msg) % 256 # no check
     try: return cksum == hash(msg) % 256, msg.decode()
     except: return RCV_FAIL_DECODE, 0
     
 def main():
     # Example: send
     set_options(use_cksum=1, compress=1)
-    send("testing")
+    send("arihaielcdlakrhauilkhfncrakherifcnkaerufhaerufhaeukhdkhl")
     # Example: receive, print status and message
     status, msg = receive()
     if status == RCV_SUCCESS: 
@@ -74,7 +72,7 @@ def main():
     else: # status == RCV_NO_MSG
         print("No message...")
         
-options = {"use_cksum": 1, "compress": 0}
+options = {"use_cksum": 0, "compress": 0}
         
 def set_options(**new_options): 
     """ 
