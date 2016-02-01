@@ -1,6 +1,6 @@
 # Proposal: Rename module to this to prevent naming conflicts
-#import serial; FAKE = 0
-import fakeSerial as serial; FAKE = 1
+import serial; FAKE = 0
+#import fakeSerial as serial; FAKE = 1
 
 ser = None
 def setSerial():
@@ -21,16 +21,24 @@ def checkMessage():
     nchar = int(ser.readline())
     return ser.read(nchar)
 
-def query(x, y): 
-    #print(x, y)
-    return 0
+def query(x, y):
     ser.flushInput()
-    ser.write("G%d,%d" % (x, y))
-    read = ser.read()
-    if read != b'A': print("Warning: Serial did not respond 'Aligned'")
+    print("\tPos: %d, %d" % (x, y))
+    ser.write(b"G%d,%d" % (x, y))
+    line = b""
+    while not b"Align" in line:
+        line = ser.readline()
+        #print(line)
+    print("\tAligned")
+    avg = sum(signalStr() for i in range(10))
+    return -avg
+
+def signalStr():
     ser.flushInput()
-    ser.write("Q")
-    return -int(ser.readline())
+    ser.write(b"S")
+    int(ser.readline())
     
 def getPos():
-    return (.5, .5)
+    ser.flushInput()
+    ser.write(b"Q")
+    return [int(i) for i in ser.readline().split()[:2]]

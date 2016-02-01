@@ -9,6 +9,10 @@ import zlib
 import serialParser
 import math
 import sys
+import struct
+
+""" Returns a 4-byte CRC32 checksum for the given message s"""
+def cksum(msg): return struct.pack('I', zlib.crc32(msg))
 
 def send(msg): 
     """ Encodes input message and calls the parser method to send it. """
@@ -17,8 +21,9 @@ def send(msg):
 def encode(msg):
     """ Encodes a message: adds checksum and compresses. Returns result """
     msg = toBytes(msg)
-    if options["use_cksum"]: msg += bytes([hash(msg) % 256])
+    if options["use_cksum"]: msg += cksum(msg)
     if options["compress"]: msg = compress(msg)
+    print("Sent: " + str(msg)[2:-1])
     return msg
 
 RCV_FAIL_DECODE = -2
@@ -48,29 +53,37 @@ def decode(msg):
     if options["compress"]:
         try: msg = zlib.decompress(msg)
         except: return RCV_FAIL_DECOMPRESS, 0
-    if options["use_cksum"]: msg, cksum = msg[:-1], msg[-1]
-    else: cksum = hash(msg) % 256 # no check
-    try: return cksum == hash(msg) % 256, msg.decode()
+    if options["use_cksum"]: msg, ck = msg[:-4], msg[-4:]
+    else: ck = cksum(msg) # no check
+    try: return ck == cksum(msg), msg.decode()
     except: return RCV_FAIL_DECODE, 0
     
 def main():
     # Example: send
     set_options(use_cksum=1, compress=1)
-    send("arihaielcdlakrhauilkhfncrakherifcnkaerufhaerufhaeukhdkhl")
-    # Example: receive, print status and message
-    status, msg = receive()
-    if status == RCV_SUCCESS: 
-        print("Receive successful")
-        print("Message: " + msg)
-    elif status == RCV_FAIL_CKSUM:
-        print("Checksum failed")
-        print("Message: " + msg)
-    elif status == RCV_FAIL_DECOMPRESS:
-        print("Decompression failed")
-    elif status == RCV_FAIL_DECODE:
-        print("Decoding failed")
-    else: # status == RCV_NO_MSG
-        print("No message...")
+    while 1:
+        line = input("(S)end or (R)eceive?: ").lower()
+        if line[0] == 's': 
+            msg = input("Enter message: ")
+            print("Sending message...")
+            send(msg)
+        # Example: receive, print status and message
+        elif line[0] == 'r':
+            print("Waiting for recipt of message...")
+            status, msg = receive()
+            if status == RCV_SUCCESS: 
+                print("Receive successful")
+                print("Message: " + msg)
+            elif status == RCV_FAIL_CKSUM:
+                print("Checksum failed")
+                print("Message: " + msg)
+            elif status == RCV_FAIL_DECOMPRESS:
+                print("Decompression failed")
+            elif status == RCV_FAIL_DECODE:
+                print("Decoding failed")
+            else: # status == RCV_NO_MSG
+                print("No message...")
+        else: print("Invalid. Try again")
         
 options = {"use_cksum": 0, "compress": 0}
         
