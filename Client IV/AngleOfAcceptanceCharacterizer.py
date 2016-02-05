@@ -80,7 +80,9 @@ def rasterScan(azTime, altTime, rows = 10, rowSampleNum  = 100):
     scanTwoLines(azTime, altTime/rows, sampleNum = rowSampleNum)
     writeCSV(rasterData);
 
-def writeCSV(list):
-    with open('some.csv', 'wb') as f:
+def writeCSV(data):
+    with open('AcceptanceCharacterization.csv', 'wb') as f:
     writer = csv.writer(f)
-    writer.writerows(someiterable)
+    for row in data:
+        writer.writerows(row)
+    
