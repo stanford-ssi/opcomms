@@ -17,14 +17,14 @@ global goto; goto = b"G"
 global stop; stop = b"X"
 global blink; blink =b"B"
 
-try:
-    try:
-        SER = serial.Serial('/dev/ttyACM1', baudrate = 250000)  # open serial port
-    except:
-        SER = serial.Serial('/dev/ttyACM0', baudrate = 250000)  # open serial port
-except: raise Exception("Couldn't auto-connect. Are we plugged in?");
+#try:
+#    try:
+#        SER = serial.Serial('/dev/ttyACM1', baudrate = 250000)  # open serial port
+#    except:
+#        SER = serial.Serial('/dev/ttyACM0', baudrate = 250000)  # open serial port
+#except: raise Exception("Couldn't auto-connect. Are we plugged in?");
 
-print("Teensy connected at " + SER.name)         # check which port was really used
+#print("Teensy connected at " + SER.name)         # check which port was really used
 
 def moveLeft():
     SER.write(left);
@@ -40,7 +40,7 @@ def moveDown():
 def stop():
     SER.write(stop)
 def setSpeed(speed):
-    SER.write( enconde(str(speed), "UTF-8");
+    SER.write( bytes( str(speed), "UTF-8"));
 
 def query():
     SER.flushInput()
@@ -55,7 +55,7 @@ def query():
 def scanTwoLines(azTime, altTime, sampleNum = 100):
     lineData = [];
     moveLeft()
-    for i in range(1:sampleNum):
+    for i in range(1,sampleNum):
         lineData.append(query());
         time.sleep(azTime/sampleNum);
     stop();
@@ -63,7 +63,7 @@ def scanTwoLines(azTime, altTime, sampleNum = 100):
     time.sleep(altTime);
     stop();
     moveRight();
-    for i in range(1:sampleNum):
+    for i in range(1,sampleNum):
         lineData.append(query());
         time.sleep(azTime/sampleNum);
     stop();
@@ -81,8 +81,13 @@ def rasterScan(azTime, altTime, rows = 10, rowSampleNum  = 100):
     writeCSV(rasterData);
 
 def writeCSV(data):
-    with open('AcceptanceCharacterization.csv', 'wb') as f:
-    writer = csv.writer(f)
-    for row in data:
-        writer.writerows(row)
+	with open('AcceptanceCharacterization.csv', 'wt') as f:
+		writer = csv.writer(f)
+		for row in data:
+			writer.writerow(row)
+
+data = []
+for i in range(1,5):
+	data. append(["asdas", 56]);
+writeCSV(data)
     
