@@ -2,7 +2,9 @@ from tkinter import *
 from threading import *
 from time import *
 
-# import align
+import encodeDecode
+import serialParser
+import align
 
 class MainWindow(Tk):
 	def __init__(self, parent):
@@ -14,7 +16,7 @@ class MainWindow(Tk):
 		self.receiveFrame()
 		self.optionsFrame()
 		self.update_idletasks()
-		self.receiveText.insert(END, "Hello!")
+		#self.receiveText.insert(END, "Hello!")
 
 		self.align = AlignWindow(self)
 		self.align.window.title("Align Node")
@@ -67,7 +69,7 @@ class MainWindow(Tk):
 
 	def transmit(self):
 		messageChecker.paused = True
-		# calls send(whatever's in transmit box) method in encodeDecode.py
+		encodeDecode.send(self.transmitEntry.get())
 		messageChecker.paused = False
 
 		return 0
@@ -81,10 +83,10 @@ class MainWindow(Tk):
 		self.params.window.deiconify()
 
 	def checkMyEmail(self):
-		self.receiveText.delete(1.0, END)
-		self.receiveText.insert(END, "Checking...")
-			# call receive in encodeDecode.py
-			# if message found, set message (output of encodeDecode.py)
+		received = encodeDecode.receive()[1]
+		if received: 
+			self.receiveText.insert(END, received + "\n")
+			self.receiveText.see(END)
 
 class AlignWindow(Tk):
 	def __init__(self, parent):
@@ -248,17 +250,19 @@ class AlignWindow(Tk):
 		self.targetAltField.insert(0, self.targetGPS[2])
 
 	def setGPS(self):
-		self.homeGPS[0] = self.homeLatField.get()
-		self.homeGPS[1] = self.homeLongField.get()
-		self.homeGPS[2] = self.homeAltField.get()
-		self.targetGPS[0] = self.targetLatField.get()
-		self.targetGPS[1] = self.targetLongField.get()
-		self.targetGPS[2] = self.targetAltField.get()
+		self.homeGPS[0] = float(self.homeLatField.get())
+		self.homeGPS[1] = float(self.homeLongField.get())
+		self.homeGPS[2] = float(self.homeAltField.get())
+		self.targetGPS[0] = float(self.targetLatField.get())
+		self.targetGPS[1] = float(self.targetLongField.get())
+		self.targetGPS[2] = float(self.targetAltField.get())
+		asc = align.getGPSAscension(self.homeGPS, self.targetGPS)
+		azi = align.getGPSAzimuth(self.homeGPS, self.targetGPS)
+		serialParser.moveTo(azi, asc)
 
 	def start(self):
 		#self.alignment = AlignThread(3, "Align_Thread", self)
 		#self.alignment.start()
-
 		return 0
 
 	def plot(self, diodeData):
@@ -303,12 +307,23 @@ class ParamsWindow():
 		pulseLengthLabel = Label(paramsFieldsFrame,  text = "Pulse Length", font = ("Sans Serif", 10, "bold"), bg = "white")
 		sampleRateLabel = Label(paramsFieldsFrame, text = "Sample Rate", font = ("Sans Serif", 10, "bold"), bg = "white")
 		thresholdLabel = Label(paramsFieldsFrame, text = "Threshold", font = ("Sans Serif", 10, "bold"), bg = "white")
+		compressLabel = Label(paramsFieldsFrame, text = "Compress?", font = ("Sans Serif", 10, "bold"), bg = "white")
+		checksumLabel = Label(paramsFieldsFrame, text = "Use checksum?", font = ("Sans Serif", 10, "bold"), bg = "white")
 
-		self.ppmLevelField = Entry(paramsFieldsFrame, highlightthickness = 2, highlightcolor = "cyan4", highlightbackground = "light slate gray")
-		self.pulseLengthField = Entry(paramsFieldsFrame, highlightthickness = 2, highlightcolor = "cyan4", highlightbackground = "light slate gray")
-		self.sampleRateField = Entry(paramsFieldsFrame, highlightthickness = 2, highlightcolor = "cyan4", highlightbackground = "light slate gray")
-		self.thresholdField = Entry(paramsFieldsFrame, highlightthickness = 2, highlightcolor = "cyan4", highlightbackground = "light slate gray")
-
+		self.compressVar = IntVar()
+		self.checksumVar = IntVar()
+		
+		kwargs = { "highlightthickness" : 2, 
+				"highlightcolor" : "cyan4", 
+				"highlightbackground" : "light slate gray"}
+		
+		self.ppmLevelField = Entry(paramsFieldsFrame, **kwargs)
+		self.pulseLengthField = Entry(paramsFieldsFrame, **kwargs)
+		self.sampleRateField = Entry(paramsFieldsFrame, **kwargs)
+		self.thresholdField = Entry(paramsFieldsFrame, **kwargs)
+		self.compressBox = Checkbutton(paramsFieldsFrame, variable=self.compressVar, **kwargs)
+		self.checksumBox = Checkbutton(paramsFieldsFrame, variable=self.checksumVar, **kwargs)
+		
 		self.populateFieldsFromStored()
 
 		parametersTitle.grid(row = 0, column = 0, columnspan = 2)
@@ -320,6 +335,12 @@ class ParamsWindow():
 		self.sampleRateField.grid(row = 3, column = 1, padx = "0 10", pady = 5)
 		thresholdLabel.grid(row = 4, column = 0, padx = 10, pady = "5 10")
 		self.thresholdField.grid(row = 4, column = 1, padx = "0 10", pady = "5 10")
+		
+		compressLabel.grid(row = 5, column = 0, padx = 10, pady = "5 10")
+		self.compressBox.grid(row = 5, column = 1, padx = "0 10", pady = "5 10")
+		
+		checksumLabel.grid(row = 6, column = 0, padx = 10, pady = "5 10")
+		self.checksumBox.grid(row = 6, column = 1, padx = "0 10", pady = "5 10")
 
 	def addParamsButtons(self):
 		paramsButtonsFrame = Frame(self.window)
@@ -347,7 +368,8 @@ class ParamsWindow():
 		self.values[1] = self.pulseLengthField.get()
 		self.values[2] = self.sampleRateField.get()
 		self.values[3] = self.thresholdField.get()
-
+		encodeDecode.setOptions(compress=self.compressVar.get(),
+							use_cksum = self.checksumVar.get())
 		self.window.withdraw()
 		messageChecker.paused = False
 

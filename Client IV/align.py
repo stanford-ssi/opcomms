@@ -16,6 +16,7 @@
 import math
 import time
 import serial
+import serialParser
 
 global CENTER; CENTER = [0,0];
 global RADIUS; RADIUS = 6.371E6 #Earth radius in meters.
@@ -29,14 +30,7 @@ global Query; Query = b"Q"
 global goto; goto = b"G"
 deviceName = '/dev/something'
 
-try:
-    try:
-        SER = serial.Serial('/dev/ttyACM1', baudrate = 250000)  # open serial port
-    except:
-        SER = serial.Serial('/dev/ttyACM0', baudrate = 250000)  # open serial port
-except: raise Exception("Couldn't auto-connect. Are we plugged in?");
-
-print("Teensy connected at " + SER.name)         # check which port was really used
+SER = serialParser.ser
 
 
 def getGPSAzimuth(p1,p2):
