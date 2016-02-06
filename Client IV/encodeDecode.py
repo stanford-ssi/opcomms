@@ -42,7 +42,7 @@ def sendPacket(msg, idx, lsent):
 
 def encode(msg):
     """ Encodes a message: adds checksum and compresses. Returns result """
-    msg = toBytes(msg)
+    msg = serialParser.toBytes(msg)
     if options["use_cksum"]: msg += cksum(msg)
     if options["compress"]: msg = compress(msg)
     return msg
@@ -63,8 +63,21 @@ def receive():
         RCV_SUCCESS: Message received.
     """
     msg = serialParser.checkMessage()
-    if msg: return decode(msg)
-    else: return RCV_NO_MSG, 0
+    if msg: status, msg = decode(msg)
+    else: status, msg = (RCV_NO_MSG, 0)
+    
+    if status == RCV_SUCCESS: 
+        print("Receive successful")
+        print("Message: " + msg)
+    elif status == RCV_FAIL_CKSUM:
+        print("Checksum failed")
+        print("Message: " + msg)
+    elif status == RCV_FAIL_DECOMPRESS:
+        print("Decompression failed")
+    elif status == RCV_FAIL_DECODE:
+        print("Decoding failed")
+    else: print("No message")        
+    return status, msg
 
 def decode(msg):
     """ 
@@ -135,9 +148,5 @@ minimizes transmit time
 """
 def compress(msg): return zlib.compress(msg, COMPRESS_LEVEL)
 def decompress(msg): return zlib.decompress(msg)
-    
-def toBytes(inp): 
-    """ Converts the input to a bytes-like object if it is not already one. """
-    return inp.encode() if isinstance(inp, str) else inp
 
 if __name__ == "__main__": main()

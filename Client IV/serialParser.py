@@ -3,6 +3,7 @@ import serial.tools.list_ports as list_ports
 
 ser = None
 def setSerial():
+    USE_FAKE = -1
     global ser
     if ser: 
         print("Warning: Serial already initialized")
@@ -11,16 +12,16 @@ def setSerial():
     if ports == []:
         try: 
             import fakeSerial
-            serial = fakeSerial
-            port = ""
+            port = USE_FAKE
             print("No serial port found. Using fake serial...")
         except ImportError:
             raise Exception("Could not open serial port")
     elif len(ports) == 1: 
-        print("Port found:", ports[0][0])
-        port = ports[0][0]
+        print("Port found:", ports[0])
+        port = ports[0]
     else: port = input("Please enter a port: ")
-    ser = serial.Serial(port, 250000)
+    if port == USE_FAKE: ser = fakeSerial.Serial()
+    else: ser = serial.Serial(port, 250000)
 setSerial()
 
 def sendMessage(msg):
@@ -29,19 +30,20 @@ def sendMessage(msg):
 def checkMessage():
     ser.flushInput()
     ser.write(b"<")
-    nchar = ser.read(1)[0]
+    print("serialParser: Waiting for serial ready")
+    while ser.readline() != b"Waiting for msg:\r\n": pass
+    print("serialParser: Waiting for message")
+    nchar = int(ser.readline())
     return ser.read(nchar)
 
 def query(x, y):
     ser.flushInput()
     print("\tPos: %d, %d" % (x, y))
     ser.write(b"G%d,%d" % (x, y))
-    line = b""
-    while not b"Align" in line:
-        line = ser.readline()
-        #print(line)
+    while ser.readline() == b"Aligned!\r\n": pass
     print("\tAligned")
     avg = sum(signalStr() for i in range(10))
+    print("\tStrength:", avg)
     return -avg
 
 def signalStr():
@@ -56,3 +58,9 @@ def getPos():
 
 def moveTo(azi, asc):
     print(azi, asc)
+    
+def raw(msg): ser.write(toBytes(msg))
+    
+def toBytes(inp): 
+    """ Converts the input to a bytes-like object if it is not already one. """
+    return inp.encode() if isinstance(inp, str) else inp

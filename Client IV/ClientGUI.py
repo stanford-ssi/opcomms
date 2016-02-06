@@ -50,7 +50,7 @@ class MainWindow(Tk):
 		receiveFrame.config(bg = "white")
 
 		receiveLabel = Label(receiveFrame, text="Receive", font=("Sans Serif", 20, "bold"), fg="blue", bg = "white")
-		self.receiveText = Text(receiveFrame, width = 30, height = 10, fg = "blue", highlightthickness = 2, highlightcolor = "blue", highlightbackground = "light slate gray")
+		self.receiveText = Text(receiveFrame, width=64, height = 10, fg = "blue", highlightthickness = 2, highlightcolor = "blue", highlightbackground = "light slate gray")
 
 		receiveLabel.pack(pady="10 0")
 		self.receiveText.pack(padx = 10, pady = 10)
@@ -68,18 +68,18 @@ class MainWindow(Tk):
 		paramsButton.grid(column=1, row = 0, padx = 5, pady = "0 10")
 
 	def transmit(self):
-		messageChecker.paused = True
+		messageChecker.pause()
 		encodeDecode.send(self.transmitEntry.get())
-		messageChecker.paused = False
+		messageChecker.resume()
 
 		return 0
 
 	def openAlign(self):
-		messageChecker.paused = True
+		messageChecker.pause()
 		self.align.window.deiconify()
 
 	def openParams(self):
-		messageChecker.paused = True
+		messageChecker.pause()
 		self.params.window.deiconify()
 
 	def checkMyEmail(self):
@@ -98,6 +98,20 @@ class AlignWindow(Tk):
 		self.homeGPS = [37.424157, -122.177866, 150] # latitude, longitude, altitude
 		self.targetGPS = [37.424928, -122.176934, 100] # latitude, longitude, altitude
 		self.populateAlignWindow()
+		
+		def raw(st): return lambda e: serialParser.raw(st)
+		for i in range(1, 10): self.window.bind("<%d>" % i, raw(str(i)))
+		self.window.bind("<KeyRelease-Up>", raw("X"))
+		self.window.bind("<KeyRelease-Down>", raw("X"))
+		self.window.bind("<KeyRelease-Left>", raw("X"))
+		self.window.bind("<KeyRelease-Right>", raw("X"))
+		self.window.bind("<Up>", raw("U"))
+		self.window.bind("<Down>", raw("D"))
+		self.window.bind("<Left>", raw("L"))
+		self.window.bind("<Right>", raw("R"))
+		self.window.bind("`", raw("~"))
+		
+		
 
 	def populateAlignWindow(self):
 		self.addGPSEntry()
@@ -148,61 +162,15 @@ class AlignWindow(Tk):
 		oscopeLabel = Label(sensorControlsFrame, text = "Photodiode Output", font = ("Sans Serif", 12, "bold"), bg = "white")
 		#oscopeLabel.pack(pady = 10)
 		oscope = Canvas(sensorControlsFrame, width = 400, height = 300, bg = "black")
-		controlArrows = Canvas(sensorControlsFrame, width = 100, height = 100, bg = "white")
 		angleDisplay = Canvas(sensorControlsFrame, width = 200, height = 300, bg = "white")
 	
 
 		oscopeLabel.grid(row = 1, column = 0)
 		oscope.grid(row = 2, column = 0)
-		controlArrows.grid(row = 2, column = 1, padx = 10)
 		angleDisplay.grid(row = 2, column = 2)
 
 		sensorControlsFrame.update_idletasks()
-
-		self.addControlArrows(controlArrows)
 		self.populateAngleDisplay(angleDisplay)
-
-	def addControlArrows(self, controlArrows):
-		width = controlArrows.winfo_width()
-		height = controlArrows.winfo_height()
-		padding = 5
-		upArrow = controlArrows.create_polygon(width/2, 0, width/3 + padding, height/3 - padding, 2*width/3 - padding, height/3 - padding)
-		leftArrow = controlArrows.create_polygon(0, height/2, width/3 - padding, 2*height/3 - padding, width/3 - padding, height/3 + padding)
-		downArrow = controlArrows.create_polygon(width/2, height, 2*width/3 - padding, 2*height/3 + padding, width/3 + padding, 2*height/3 + padding)
-		rightArrow = controlArrows.create_polygon(width, height/2, 2*width/3 + padding, height/3 + padding, 2*width/3 + padding, 2*height/3 - padding)
-
-		# upArrow.bind = ("<ButtonPress-1>", self.up_press)
-		# upArrow.bind = ("<ButtonPress-1", self.up_release)
-		# leftArrow.bind = ("<ButtonPress-1>", self.left_press)
-		# leftArrow.bind = ("<ButtonPress-1", self.left_release)
-		# downArrow.bind = ("<ButtonPress-1>", self.down_press)
-		# downArrow.bind = ("<ButtonPress-1", self.down_release)
-		# rightArrow.bind = ("<ButtonPress-1>", self.right_press)
-		# rightArrow.bind = ("<ButtonPress-1", self.right_release)
-
-	def up_press(self, event):
-		self.configure(relief = "sunken")
-
-	def up_release(self, event):
-		self.configure(relief = "raised")
-
-	def left_press(self, event):
-		self.configure(relief = "sunken")
-
-	def left_release(self, event):
-		self.configure(relief = "raised")
-
-	def down_press(self, event):
-		self.configure(relief = "sunken")
-
-	def down_release(self, event):
-		self.configure(relief = "raised")
-
-	def right_press(self, event):
-		self.configure(relief = "sunken")
-
-	def right_release(self, event):
-		self.configure(relief = "raised")
 
 	def populateAngleDisplay(self, angleDisplay):
 		width = angleDisplay.winfo_width()
@@ -277,7 +245,7 @@ class AlignWindow(Tk):
 	def close(self):
 		self.populateGPSFieldsFromStored()
 		self.window.withdraw()
-		messageChecker.paused = False
+		messageChecker.resume()
 
 	def setFinished(self):
 		# boolean: alignment complete
@@ -371,12 +339,12 @@ class ParamsWindow():
 		encodeDecode.setOptions(compress=self.compressVar.get(),
 							use_cksum = self.checksumVar.get())
 		self.window.withdraw()
-		messageChecker.paused = False
+		messageChecker.resume()
 
 	def close(self):
 		self.populateFieldsFromStored()
 		self.window.withdraw()
-		messageChecker.paused = False
+		messageChecker.resume()
 
 class MainThread(Thread):
 	def __init__(self, threadID, name):
@@ -400,6 +368,14 @@ class MessageThread(Thread):
 
 		self.paused = True
 		self.killed = False
+		
+	def pause(self): 
+		print("Pausing Receive Mode")
+		self.paused = True
+	
+	def resume(self): 
+		print("Resuming Receive Mode")
+		self.paused = False
 
 	def run(self):
 		while self.killed == False:
