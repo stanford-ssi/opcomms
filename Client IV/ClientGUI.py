@@ -1,3 +1,12 @@
+""" 
+ClientGUI.py
+Stanford Space Initative, Optical Communications Project
+Authors: Elizabeth Hillstrom, Tara Iyer
+
+ClientGUI is the user interface for OpComms System IV, providing access to alignment, transmit, and receive functionality
+"""
+
+
 from tkinter import *
 from threading import *
 from time import *
@@ -27,7 +36,7 @@ class MainWindow(Tk):
 		self.params.window.withdraw()
 
 	def transmitFrame(self):
-		'''Create Transmit Canvas and populate with label, entry box, and button'''
+		"""Create Transmit Canvas and populate with label, entry box, and button"""
 
 		transmitFrame = Frame(self)
 		transmitFrame.grid(column=0, columnspan=2, row=0, rowspan=3)
@@ -44,7 +53,7 @@ class MainWindow(Tk):
 		transmitButton.pack(pady = 10)
 
 	def receiveFrame(self):
-		'''Create Receive Canvas and populate with label and entry box'''
+		"""Create Receive Canvas and populate with label and entry box"""
 		receiveFrame = Frame(self)
 		receiveFrame.grid(column=2, columnspan=2, row=0, rowspan=6)
 		receiveFrame.config(bg = "white")
@@ -56,7 +65,7 @@ class MainWindow(Tk):
 		self.receiveText.pack(padx = 10, pady = 10)
 
 	def optionsFrame(self):
-		'''Create Options Canvas and populate with buttons'''
+		"""Create Options Canvas and populate with buttons"""
 		optionsFrame = Frame(self)
 		optionsFrame.grid(column=0, columnspan=2, row=5)
 		optionsFrame.config(bg = "white")
@@ -380,7 +389,7 @@ class ParamsWindow():
 
 class MainThread(Thread):
 	def __init__(self, threadID, name):
-		'''creates a MainThread object with attributes threadID, name, and running state'''
+		"""creates a MainThread object with attributes threadID, name, and running state"""
 		Thread.__init__(self)
 		self.threadID = threadID
 		self.name = name
@@ -392,7 +401,7 @@ class MainThread(Thread):
 
 class MessageThread(Thread):
 	def __init__(self, threadID, name, parent):
-		'''creates a MessageThread object with attributes threadID, name, and running state'''
+		"""creates a MessageThread object with attributes threadID, name, and running state"""
 		Thread.__init__(self)
 		self.threadID = threadID
 		self.name = name
@@ -409,7 +418,7 @@ class MessageThread(Thread):
 
 class AlignThread(Thread):  # How do I kill this in the middle of running functions?!  ...talk to Jake about making objects?
 	def __init__(self, threadID, name, parent):
-		'''creates an AlignThread object with attributes threadID, name, and running state'''
+		"""creates an AlignThread object with attributes threadID, name, and running state"""
 		Thread.__init__(self)
 		self.threadID = threadID
 		self.name = name
