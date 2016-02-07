@@ -267,7 +267,7 @@ class ParamsWindow():
 		self.window.resizable(width=FALSE, height=FALSE)
 		self.window.config(bg = "white")
 		
-		self.values = [4, 1000, 1000, 5] # fields: PPM-level, pulse length, sample rate, threshold
+		self.values = [4, 100, 10, 5] # fields: PPM-level, pulse length, sample rate, threshold
 		self.populateParamsWindow()
 
 	def populateParamsWindow(self):
@@ -346,7 +346,8 @@ class ParamsWindow():
 		self.values[2] = self.sampleRateField.get()
 		self.values[3] = self.thresholdField.get()
 		encodeDecode.setOptions(compress=self.compressVar.get(),
-							use_cksum = self.checksumVar.get())
+							use_cksum=self.checksumVar.get())
+		serialParser.raw("O %d %d %d" % tuple(int(i) for i in self.values[1:]))
 		self.window.withdraw()
 		messageChecker.resume()
 
