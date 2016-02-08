@@ -108,7 +108,15 @@ class AlignWindow(Tk):
 		self.targetGPS = [37.424928, -122.176934, 100] # latitude, longitude, altitude
 		self.populateAlignWindow()
 		
-		def raw(st): return lambda e: serialParser.raw(st)
+		self.last_cmd = ""
+		def raw(st): 
+			def pt(e): 
+				if self.last_cmd != st:
+					serialParser.raw(st)
+					print("Raw command:", st)
+					self.last_cmd = st
+			return pt
+		
 		for i in range(1, 10): self.window.bind("<%d>" % i, raw(str(i)))
 		self.window.bind("<KeyRelease-Up>", raw("X"))
 		self.window.bind("<KeyRelease-Down>", raw("X"))
