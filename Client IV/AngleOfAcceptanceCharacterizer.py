@@ -26,6 +26,10 @@ global blink; blink =b"B"
 
 #print("Teensy connected at " + SER.name)         # check which port was really used
 
+import serialParser
+
+SER = serialParser.ser
+
 def moveLeft():
     SER.write(left);
 
@@ -37,7 +41,7 @@ def moveUp():
 
 def moveDown():
     SER.write(down);
-def stop():
+def writeStop():
     SER.write(stop)
 def setSpeed(speed):
     SER.write( bytes( str(speed), "UTF-8"));
@@ -46,37 +50,42 @@ def query():
     SER.flushInput()
     SER.write(Query)
     recieved = SER.readline()
-    t = str(recieved).split(" ");
-    return [int(t[0].split("'")[-1] ), int(t[1].split("'")[-1]), int( t[-1].split("\\")[0] ) ];
+    t = recieved.decode().split(" ");
+    return [int(i) for i in t[:3]]
 
 
 
 
 def scanTwoLines(azTime, altTime, sampleNum = 100):
+    print("azTime: " + azTime);
+    print("altTime: " + altTime);
     lineData = [];
     moveLeft()
     for i in range(1,sampleNum):
         lineData.append(query());
         time.sleep(azTime/sampleNum);
-    stop();
+        print(i)
+    writeStop();
     moveDown();
     time.sleep(altTime);
-    stop();
+    writeStop();
     moveRight();
+    print("Moving Right now.")
     for i in range(1,sampleNum):
         lineData.append(query());
         time.sleep(azTime/sampleNum);
-    stop();
+    writeStop();
     return lineData;
 
 def rasterScan(azTime, altTime, rows = 10, rowSampleNum  = 100):
-    rows = rows/2;
+    rows = rows//2;
     rasterData = []
     for i in range(1, rows-1):
         rasterData.append(scanTwoLines(azTime, altTime/rows, sampleNum = rowSampleNum))
         moveDown();
-        time.sleep(altTime);
-        stop();
+        time.sleep(altTime/rows);
+        writeStop();
+        print("full line recorded. Trying again.")
     scanTwoLines(azTime, altTime/rows, sampleNum = rowSampleNum)
     writeCSV(rasterData);
 
@@ -86,8 +95,4 @@ def writeCSV(data):
 		for row in data:
 			writer.writerow(row)
 
-data = []
-for i in range(1,5):
-	data. append(["asdas", 56]);
-writeCSV(data)
-    
+rasterScan(4, 4)    

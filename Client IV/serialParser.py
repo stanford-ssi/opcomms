@@ -14,13 +14,14 @@ def setSerial():
             import fakeSerial
             port = USE_FAKE
             print("No serial port found. Using fake serial...")
-        except ImportError:
-            raise Exception("Could not open serial port")
+        except ImportError: port = ""
+        port = ""
     elif len(ports) == 1: 
         print("Port found:", ports[0])
         port = ports[0]
     else: port = input("Please enter a port: ")
     if port == USE_FAKE: ser = fakeSerial.Serial()
+    elif port == "": ser = None
     else: ser = serial.Serial(port, 250000)
 setSerial()
 
