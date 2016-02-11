@@ -59,7 +59,7 @@ class MainWindow(Tk):
 		receiveFrame.config(bg = "white")
 
 		receiveLabel = Label(receiveFrame, text="Receive", font=("Sans Serif", 20, "bold"), fg="blue", bg = "white")
-		self.receiveText = Text(receiveFrame, width=64, height = 10, fg = "blue", highlightthickness = 2, highlightcolor = "blue", highlightbackground = "light slate gray")
+		self.receiveText = Text(receiveFrame, width=67, height = 10, fg = "blue", highlightthickness = 2, highlightcolor = "blue", highlightbackground = "light slate gray")
 
 		receiveLabel.pack(pady="10 0")
 		self.receiveText.pack(padx = 10, pady = 10)
@@ -82,6 +82,7 @@ class MainWindow(Tk):
 		if not msg: return
 		encodeDecode.send(msg)
 		self.receiveText.insert(END, "TX: " + msg + "\n")
+		self.transmitEntry.delete(0, END)
 		messageChecker.resume()
 
 	def openAlign(self):
