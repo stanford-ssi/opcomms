@@ -96,9 +96,11 @@ class MainWindow(Tk):
 
 	def checkMyEmail(self):
 		status, received = encodeDecode.receive()
-		if received: 
-			self.receiveText.insert(END, "RX: " + received + "\n")
-			self.receiveText.see(END)
+		def insert_text():	
+			if received: 
+				self.receiveText.insert(END, "RX: " + received + "\n")
+				self.receiveText.see(END)
+		self.after(0, insert_text)
 
 class AlignWindow(Tk):
 	def __init__(self, parent):
