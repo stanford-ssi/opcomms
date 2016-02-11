@@ -1,4 +1,4 @@
-""" 
+""" `
 ClientGUI.py
 Stanford Space Initative, Optical Communications Project
 Authors: Elizabeth Hillstrom, Tara Iyer
@@ -13,11 +13,11 @@ from time import *
 
 import encodeDecode
 import serialParser
-import align
 
 class MainWindow(Tk):
 	def __init__(self, parent):
 		Tk.__init__(self, parent)
+		self.protocol("WM_DELETE_WINDOW", sys.exit)
 		self.parent = parent
 		self.resizable(width=FALSE, height=FALSE)
 		self.config(bg = "white")
@@ -45,6 +45,7 @@ class MainWindow(Tk):
 		transmitLabel = Label(transmitFrame, text="Transmit", font=("Sans Serif", 20, "bold"), fg="#006400", bg = "white")
 		transmitEntryLabel = Label(transmitFrame, text = "(Instructions for Transmit Input)", font = ("Times New Roman", 9), fg="black", bg = "white")
 		self.transmitEntry = Entry(transmitFrame, width=30, fg="green", highlightthickness = 2, highlightcolor = "green", highlightbackground = "light slate gray")
+		self.transmitEntry.bind("<Return>", lambda e: self.transmit())
 		transmitButton = Button(transmitFrame, text="SEND", font=("Arial", 8, "bold"), fg="white", bg="green", activebackground = "DarkGreen", command=self.transmit)
 
 		transmitLabel.pack(pady= '10 0')
@@ -59,7 +60,7 @@ class MainWindow(Tk):
 		receiveFrame.config(bg = "white")
 
 		receiveLabel = Label(receiveFrame, text="Receive", font=("Sans Serif", 20, "bold"), fg="blue", bg = "white")
-		self.receiveText = Text(receiveFrame, width=64, height = 10, fg = "blue", highlightthickness = 2, highlightcolor = "blue", highlightbackground = "light slate gray")
+		self.receiveText = Text(receiveFrame, width=67, height = 10, fg = "blue", highlightthickness = 2, highlightcolor = "blue", highlightbackground = "light slate gray")
 
 		receiveLabel.pack(pady="10 0")
 		self.receiveText.pack(padx = 10, pady = 10)
@@ -78,10 +79,12 @@ class MainWindow(Tk):
 
 	def transmit(self):
 		messageChecker.pause()
-		encodeDecode.send(self.transmitEntry.get())
+		msg = self.transmitEntry.get()
+		if not msg: return
+		encodeDecode.send(msg)
+		self.receiveText.insert(END, "TX: " + msg + "\n")
+		self.transmitEntry.delete(0, END)
 		messageChecker.resume()
-
-		return 0
 
 	def openAlign(self):
 		messageChecker.pause()
@@ -92,9 +95,9 @@ class MainWindow(Tk):
 		self.params.window.deiconify()
 
 	def checkMyEmail(self):
-		received = encodeDecode.receive()[1]
+		status, received = encodeDecode.receive()
 		if received: 
-			self.receiveText.insert(END, received + "\n")
+			self.receiveText.insert(END, "RX: " + received + "\n")
 			self.receiveText.see(END)
 
 class AlignWindow(Tk):
@@ -109,15 +112,15 @@ class AlignWindow(Tk):
 		self.populateAlignWindow()
 		
 		self.last_cmd = ""
-		def raw(st): 
+		def raw(st, override=0): 
 			def pt(e): 
-				if self.last_cmd != st:
+				if override or self.last_cmd != st:
 					serialParser.raw(st)
 					print("Raw command:", st)
 					self.last_cmd = st
 			return pt
 		
-		for i in range(1, 10): self.window.bind("<%d>" % i, raw(str(i)))
+		for i in range(1, 10): self.window.bind("%d" % i, raw(str(i)))
 		self.window.bind("<KeyRelease-Up>", raw("X"))
 		self.window.bind("<KeyRelease-Down>", raw("X"))
 		self.window.bind("<KeyRelease-Left>", raw("X"))
@@ -126,7 +129,7 @@ class AlignWindow(Tk):
 		self.window.bind("<Down>", raw("D"))
 		self.window.bind("<Left>", raw("L"))
 		self.window.bind("<Right>", raw("R"))
-		self.window.bind("`", raw("~"))
+		self.window.bind("`", raw("~", override=1))
 		
 		
 

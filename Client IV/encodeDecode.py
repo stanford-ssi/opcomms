@@ -1,3 +1,7 @@
+# Make instructions on mounting alt/az clearer
+# get longer hex bolt for mounting
+# make transmit messages appear horizontal
+
 """
 encodeDecode.py
 Brian Zhang
@@ -94,7 +98,7 @@ def decode(msg):
     
 def main():
     # Example: send
-    setOptions(use_cksum=1, compress=0)
+    setOptions(use_cksum=0, compress=0)
     while 1:
         line = input("(S)end or (R)eceive?: ").lower()
         if line[0] == 's': 
@@ -104,7 +108,7 @@ def main():
                     msg = f.read()
             except: pass
             print("Sending message...")
-            send(msg)
+            send(msg, .1)
         # Example: receive, print status and message
         elif line[0] == 'r':
             print("Waiting for recipt of message...")
