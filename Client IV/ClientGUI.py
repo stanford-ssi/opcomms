@@ -17,7 +17,7 @@ import serialParser
 class MainWindow(Tk):
 	def __init__(self, parent):
 		Tk.__init__(self, parent)
-		self.protocol("WM_DELETE_WINDOW", sys.exit)
+		self.protocol("WM_DELETE_WINDOW", self.quit)
 		self.parent = parent
 		self.resizable(width=FALSE, height=FALSE)
 		self.config(bg = "white")
