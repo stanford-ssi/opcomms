@@ -13,6 +13,7 @@ from time import *
 
 import encodeDecode
 import serialParser
+import queue
 
 class MainWindow(Tk):
 	def __init__(self, parent):
@@ -96,8 +97,8 @@ class MainWindow(Tk):
 		self.params.window.deiconify()
 
 	def checkMyEmail(self):
-		if not messageChecker.paused:
-			status, received = encodeDecode.receive()
+		if not messageChecker.paused and not messageChecker.out.empty():
+			status, received = messageChecker.out.get()
 			if received: 
 				self.receiveText.insert(END, "RX: " + received + "\n")
 				self.receiveText.see(END)
@@ -389,6 +390,7 @@ class MessageThread(Thread):
 		self.threadID = threadID
 		self.name = name
 		self.parent = parent
+		self.out = queue.Queue()
 
 		self.paused = True
 		self.killed = False
@@ -404,7 +406,9 @@ class MessageThread(Thread):
 	def run(self):
 		while self.killed == False:
 			if self.paused == False:
-				self.parent.window.checkMyEmail()
+				msg = encodeDecode.receive()
+				if msg[0] != encodeDecode.RCV_NO_MSG:
+					self.out.put(msg)
 			sleep(0.1)
 
 class AlignThread(Thread):  # How do I kill this in the middle of running functions?!  ...talk to Jake about making objects?
@@ -424,6 +428,7 @@ class AlignThread(Thread):  # How do I kill this in the middle of running functi
 if __name__ == "__main__":
 	app = MainThread(2, "Main_Thread")
 	messageChecker = MessageThread(1, "Message_Thread", app)
+	messageChecker.start()
 	app.start()
 	app.window.openAlign()
 	app.window.mainloop() # I'm not clear on why this needs to be done outside the thread's run method, but it seem like it does 

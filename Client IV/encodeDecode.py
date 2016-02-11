@@ -15,6 +15,7 @@ import math
 import sys
 import struct
 import time
+import threading
 
 """ Returns a 4-byte CRC32 checksum for the given message s"""
 def cksum(msg): return struct.pack('I', zlib.crc32(msg))
