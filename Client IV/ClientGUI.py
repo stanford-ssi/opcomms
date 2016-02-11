@@ -34,6 +34,7 @@ class MainWindow(Tk):
 		self.params = ParamsWindow(self)
 		self.params.window.title("Set PPM Parameters")
 		self.params.window.withdraw()
+		self.after(0, self.checkMyEmail)
 
 	def transmitFrame(self):
 		"""Create Transmit Canvas and populate with label, entry box, and button"""
@@ -95,12 +96,12 @@ class MainWindow(Tk):
 		self.params.window.deiconify()
 
 	def checkMyEmail(self):
-		status, received = encodeDecode.receive()
-		def insert_text():	
+		if not messageChecker.paused:
+			status, received = encodeDecode.receive()
 			if received: 
 				self.receiveText.insert(END, "RX: " + received + "\n")
 				self.receiveText.see(END)
-		self.after(0, insert_text)
+		self.after(100, self.checkMyEmail)
 
 class AlignWindow(Tk):
 	def __init__(self, parent):
@@ -423,8 +424,6 @@ class AlignThread(Thread):  # How do I kill this in the middle of running functi
 if __name__ == "__main__":
 	app = MainThread(2, "Main_Thread")
 	messageChecker = MessageThread(1, "Message_Thread", app)
-
-	messageChecker.start()
 	app.start()
 	app.window.openAlign()
 	app.window.mainloop() # I'm not clear on why this needs to be done outside the thread's run method, but it seem like it does 
