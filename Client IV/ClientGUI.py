@@ -14,6 +14,14 @@ from time import *
 import encodeDecode
 import serialParser
 import queue
+import collections
+import math
+import numpy as np
+
+LONG_DELAY = 250
+DELAY = 1
+DELAY_SEC = DELAY / 1000.0
+MAX_READING = 1024.0
 
 class MainWindow(Tk):
 	def __init__(self, parent):
@@ -35,7 +43,7 @@ class MainWindow(Tk):
 		self.params = ParamsWindow(self)
 		self.params.window.title("Set PPM Parameters")
 		self.params.window.withdraw()
-		self.after(0, self.checkMyEmail)
+		self.after(LONG_DELAY, self.checkMyEmail)
 
 	def transmitFrame(self):
 		"""Create Transmit Canvas and populate with label, entry box, and button"""
@@ -90,7 +98,7 @@ class MainWindow(Tk):
 
 	def openAlign(self):
 		messageChecker.pause()
-		self.align.window.deiconify()
+		self.align.open()
 
 	def openParams(self):
 		messageChecker.pause()
@@ -102,15 +110,15 @@ class MainWindow(Tk):
 			if received: 
 				self.receiveText.insert(END, "RX: " + received + "\n")
 				self.receiveText.see(END)
-		self.after(100, self.checkMyEmail)
+		self.after(LONG_DELAY, self.checkMyEmail)
 
-class AlignWindow(Tk):
+class AlignWindow:
 	def __init__(self, parent):
 		self.parent = parent
 		self.window = Toplevel()
 		self.window.resizable(width=FALSE, height=FALSE)
 		self.window.config(bg = "white")
-
+		self.window.protocol("WM_DELETE_WINDOW", self.close)
 		self.homeGPS = [37.424157, -122.177866, 150] # latitude, longitude, altitude
 		self.targetGPS = [37.424928, -122.176934, 100] # latitude, longitude, altitude
 		self.populateAlignWindow()
@@ -120,7 +128,6 @@ class AlignWindow(Tk):
 			def pt(e): 
 				if override or self.last_cmd != st:
 					serialParser.raw(st)
-					print("Raw command:", st)
 					self.last_cmd = st
 			return pt
 		
@@ -135,8 +142,9 @@ class AlignWindow(Tk):
 		self.window.bind("<Right>", raw("R"))
 		self.window.bind("`", raw("~", override=1))
 		
-		
-
+		self.q_out = collections.deque()
+		#for i in range(self.oscope_width): self.q_out.append(0)
+	
 	def populateAlignWindow(self):
 		self.addGPSEntry()
 		self.addSensorControls()
@@ -179,22 +187,34 @@ class AlignWindow(Tk):
 		self.populateGPSFieldsFromStored()
 
 	def addSensorControls(self):
+		self.oscope_width = 600
+		self.oscope_height = 300
 		sensorControlsFrame = Frame(self.window)
 		sensorControlsFrame.grid(row=1, column = 0)
 		sensorControlsFrame.config(bg = "white")
-
-		oscopeLabel = Label(sensorControlsFrame, text = "Photodiode Output", font = ("Sans Serif", 12, "bold"), bg = "white")
+		FONT = ("Sans Serif", 12, "bold")
+		oscopeLabel = Label(sensorControlsFrame, text = "Photodiode Output", font = FONT, bg = "white")
+		maxAvgFrame = Frame(sensorControlsFrame)
+		kwargs={"font":FONT, "bg":"white", "width":10}
+		self.oscopeMax = Label(maxAvgFrame, **kwargs)
+		self.oscopeAvg = Label(maxAvgFrame, **kwargs)
+		self.oscopeMax.grid(row=0, column=0)
+		self.oscopeAvg.grid(row=0, column=1)
 		#oscopeLabel.pack(pady = 10)
-		oscope = Canvas(sensorControlsFrame, width = 400, height = 300, bg = "black")
-		angleDisplay = Canvas(sensorControlsFrame, width = 200, height = 300, bg = "white")
-	
-
-		oscopeLabel.grid(row = 1, column = 0)
-		oscope.grid(row = 2, column = 0)
-		angleDisplay.grid(row = 2, column = 2)
+		self.oscope = Canvas(sensorControlsFrame, width = self.oscope_width, 
+							height = self.oscope_height, bg = "black")
+		#angleDisplay = Canvas(sensorControlsFrame, width = 200, height = 300, bg = "white")
+		self.oscopeSlider = Scale(sensorControlsFrame, from_=1.5, to=0,
+								resolution=0.01, showvalue=False, length=self.oscope_height)
+		self.oscopeSlider.set(1)
+		oscopeLabel.grid(row = 0, column = 0)
+		maxAvgFrame.grid(row=1, column=0)
+		self.oscope.grid(row = 2, column = 0)
+		self.oscopeSlider.grid(row=2, column=1)
+		#angleDisplay.grid(row = 2, column = 2)
 
 		sensorControlsFrame.update_idletasks()
-		self.populateAngleDisplay(angleDisplay)
+		#self.populateAngleDisplay(angleDisplay)
 
 	def populateAngleDisplay(self, angleDisplay):
 		width = angleDisplay.winfo_width()
@@ -257,31 +277,75 @@ class AlignWindow(Tk):
 		#self.alignment.start()
 		return 0
 
-	def plot(self, diodeData):
-		# update oscope readout
-		return 0
+	def plot(self):
+		transform = lambda x: self.oscope_height - x*zoom
+		self.oscope.delete(ALL)
+		mult = 10 ** self.oscopeSlider.get()
+		zoom = self.oscope_height * mult / MAX_READING
+		units_top = MAX_READING / mult
+		units_scale = units_top/2.5
+		# round units_top to some nice round number
+		base = 10**int(math.log10(units_scale))
+		scale = int([0, 1, 1, 2.5, 2.5, 2.5, 5, 5, 5, 5, 5][int(units_scale/base)] * base)
+		for i in range(0, int(units_top), scale):
+			val = transform(i)
+			self.oscope.create_line(0, val, self.oscope_width, val, fill="gray")
+			self.oscope.create_text(20, val-10, text=str(i), fill="gray")
+		avg = sum(self.q_out) / len(self.q_out)
+		avgv = transform(avg)
+		self.oscope.create_line(0, avgv, self.oscope_width, avgv, 
+							fill="green", dash=1)
+		def plotSeq(vals, color):
+			last = transform(vals[0])
+			for i in range(len(vals)):
+				val = transform(vals[i])
+				self.oscope.create_line(i, last, i+1, val, fill=color)
+				last = val
+		plotSeq(self.q_out, "yellow")
+		self.oscopeMax.config(text="MAX: %d" % max(self.q_out))
+		self.oscopeAvg.config(text="AVG: %.1f" % avg)
 
 	def stop(self):
 		#if self.alignment.isAlive():
 		#	alignment.killed = True
 		return 0
+	
+	def open(self):
+		self.window.deiconify()
+		self.window.after(LONG_DELAY, self.checkOScope)
+		self.oscopeThread = OScopeThread("OScopeThread", self)
+		self.oscopeThread.start()
 
 	def close(self):
 		self.populateGPSFieldsFromStored()
 		self.window.withdraw()
 		messageChecker.resume()
+		self.oscopeThread.killed = True
 
 	def setFinished(self):
 		# boolean: alignment complete
 		return 0
-
-class ParamsWindow():
+	
+	def oscopeUpdate(self, val):
+		qrem = self.oscopeThread.out.qsize()
+		if qrem > 100: print("Falling behind by", qrem)
+		self.q_out.append(val*1.2)
+		if len(self.q_out) > self.oscope_width: self.q_out.popleft()
+	
+	def checkOScope(self):
+		if not self.oscopeThread.killed:
+			while not self.oscopeThread.out.empty():
+				self.oscopeUpdate(self.oscopeThread.out.get())
+			self.plot()
+			self.window.after(25, self.checkOScope)
+	
+class ParamsWindow:
 	def __init__(self, parent):
 		self.parent = parent
 		self.window = Toplevel()
 		self.window.resizable(width=FALSE, height=FALSE)
 		self.window.config(bg = "white")
-		
+		self.window.protocol("WM_DELETE_WINDOW", self.close)
 		self.values = [4, 100, 10, 5] # fields: PPM-level, pulse length, sample rate, threshold
 		self.populateParamsWindow()
 
@@ -382,6 +446,21 @@ class MainThread(Thread):
 
 	def run(self):
 		return 0
+	
+class OScopeThread(Thread):
+	def __init__(self, name, parent):
+		Thread.__init__(self)
+		self.name = name
+		self.parent = parent
+		self.out = queue.Queue()
+		self.killed = False
+		
+	def run(self):
+		print("Run")
+		while not self.killed: 
+			self.out.put(serialParser.signalStr())
+			sleep(DELAY_SEC)
+		print("Killed")
 
 class MessageThread(Thread):
 	def __init__(self, threadID, name, parent):
@@ -409,7 +488,7 @@ class MessageThread(Thread):
 				msg = encodeDecode.receive()
 				if msg[0] != encodeDecode.RCV_NO_MSG:
 					self.out.put(msg)
-			sleep(0.1)
+			sleep(DELAY_SEC)
 
 class AlignThread(Thread):  # How do I kill this in the middle of running functions?!  ...talk to Jake about making objects?
 	def __init__(self, threadID, name, parent):
