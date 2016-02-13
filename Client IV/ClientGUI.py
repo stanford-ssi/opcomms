@@ -16,11 +16,11 @@ import serialParser
 import queue
 import collections
 import math
-import numpy as np
 
 LONG_DELAY = 250
 DELAY = 1
 DELAY_SEC = DELAY / 1000.0
+READS = 1000 // DELAY
 MAX_READING = 1024.0
 
 class MainWindow(Tk):
@@ -204,9 +204,9 @@ class AlignWindow:
 		self.oscope = Canvas(sensorControlsFrame, width = self.oscope_width, 
 							height = self.oscope_height, bg = "black")
 		#angleDisplay = Canvas(sensorControlsFrame, width = 200, height = 300, bg = "white")
-		self.oscopeSlider = Scale(sensorControlsFrame, from_=1.5, to=0,
+		self.oscopeSlider = Scale(sensorControlsFrame, from_=3, to=0,
 								resolution=0.01, showvalue=False, length=self.oscope_height)
-		self.oscopeSlider.set(1)
+		#self.oscopeSlider.set(1)
 		oscopeLabel.grid(row = 0, column = 0)
 		maxAvgFrame.grid(row=1, column=0)
 		self.oscope.grid(row = 2, column = 0)
@@ -286,15 +286,11 @@ class AlignWindow:
 		units_scale = units_top/2.5
 		# round units_top to some nice round number
 		base = 10**int(math.log10(units_scale))
-		scale = int([0, 1, 1, 2.5, 2.5, 2.5, 5, 5, 5, 5, 5][int(units_scale/base)] * base)
+		scale = int([1, 1, 1, 2.5, 2.5, 2.5, 5, 5, 5, 5, 5][int(units_scale/base)] * base)
 		for i in range(0, int(units_top), scale):
 			val = transform(i)
 			self.oscope.create_line(0, val, self.oscope_width, val, fill="gray")
 			self.oscope.create_text(20, val-10, text=str(i), fill="gray")
-		avg = sum(self.q_out) / len(self.q_out)
-		avgv = transform(avg)
-		self.oscope.create_line(0, avgv, self.oscope_width, avgv, 
-							fill="green", dash=1)
 		def plotSeq(vals, color):
 			last = transform(vals[0])
 			for i in range(len(vals)):
@@ -302,7 +298,13 @@ class AlignWindow:
 				self.oscope.create_line(i, last, i+1, val, fill=color)
 				last = val
 		plotSeq(self.q_out, "yellow")
-		self.oscopeMax.config(text="MAX: %d" % max(self.q_out))
+		#plotSeq(np.abs(np.fft.fft(self.q_out)), "green")
+		reads = list(self.q_out)[-READS:]
+		avg = sum(reads) / len(reads)
+		avgv = transform(avg)
+		self.oscope.create_line(0, avgv, self.oscope_width, avgv, 
+							fill="red", dash=1)
+		self.oscopeMax.config(text="MAX: %d" % max(reads))
 		self.oscopeAvg.config(text="AVG: %.1f" % avg)
 
 	def stop(self):
