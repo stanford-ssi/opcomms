@@ -15,7 +15,6 @@ def setSerial():
             port = USE_FAKE
             print("No serial port found. Using fake serial...")
         except ImportError: port = ""
-        port = ""
     elif len(ports) == 1: 
         print("Port found:", ports[0])
         port = ports[0]
@@ -34,7 +33,8 @@ def checkMessage():
     print("serialParser: Waiting for serial ready")
     while ser.readline() != b"Waiting for msg:\r\n": pass
     print("serialParser: Waiting for message")
-    nchar = int(ser.readline())
+    try: nchar = int(ser.readline())
+    except: return b''
     return ser.read(nchar)
 
 def query(x, y):
@@ -50,7 +50,10 @@ def query(x, y):
 def signalStr():
     ser.flushInput()
     ser.write(b"S")
-    int(ser.readline())
+    try: stren = int(ser.readline())
+    except: return 0
+    #print(stren)
+    return stren
     
 def getPos():
     ser.flushInput()
@@ -60,7 +63,9 @@ def getPos():
 def moveTo(azi, asc):
     print(azi, asc)
     
-def raw(msg): ser.write(toBytes(msg))
+def raw(msg): 
+    print("Raw command:", msg)
+    ser.write(toBytes(msg))
     
 def toBytes(inp): 
     """ Converts the input to a bytes-like object if it is not already one. """
