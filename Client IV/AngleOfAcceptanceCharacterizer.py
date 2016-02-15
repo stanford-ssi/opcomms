@@ -8,15 +8,6 @@ import serial, csv
 
 global SER;
 
-global left; left = b"L"
-global right; right  = b"R"
-global up; up  = b"U"
-global down; down = b"D"
-global query; query = b"Q"
-global goto; goto = b"G"
-global stop; stop = b"X"
-global blink; blink =b"B"
-
 try:
    try:
        SER = serial.Serial('/dev/ttyACM0', baudrate = 250000)  # open serial port
@@ -26,9 +17,17 @@ except: raise Exception("Couldn't auto-connect. Are we plugged in?");
 
 print("Teensy connected at " + SER.name)         # check which port was really used
 
-import serialParser
 
-SER = serialParser.ser
+
+global left; left = b"L"
+global right; right  = b"R"
+global up; up  = b"U"
+global down; down = b"D"
+global query; query = b"Q"
+global goto; goto = b"G"
+global stop; stop = b"X"
+global blink; blink =b"B"
+global align; align =b"A"
 
 def moveLeft():
     SER.write(left);
@@ -41,84 +40,59 @@ def moveUp():
 
 def moveDown():
     SER.write(down);
-<<<<<<< HEAD
 def Stop():
-=======
-def writeStop():
->>>>>>> master
     SER.write(stop)
 def setSpeed(speed):
     SER.write( bytes( str(speed), "UTF-8"));
 
 def Query():
     SER.flushInput()
-<<<<<<< HEAD
     SER.write(query)
     recieved = (SER.readline()).decode()
     t = str(recieved).split(" ");
     return [int(t[0].split("'")[-1] ), int(t[1].split("'")[-1]), int( t[2].split("\\")[0] ) ];
-=======
-    SER.write(Query)
-    recieved = SER.readline()
-    t = recieved.decode().split(" ");
-    return [int(i) for i in t[:3]]
->>>>>>> master
+
+
+def goPosition(p1):
+    SER.write(goto+ bytes( str(p1[0]) + str(p1[1]), "UTF-8" )) 
+    while True:
+        t = SER.readline()
+        print(t)
+        if "Aligned" in str(t): break
 
 
 
 
 def scanTwoLines(azTime, altTime, sampleNum = 100):
-    print("azTime: " + azTime);
-    print("altTime: " + altTime);
     lineData = [];
     moveLeft()
     for i in range(1,sampleNum):
         lineData.append(Query());
-        print("waiting for: " + str(azTime/sampleNum) + " : " + str(i));
+        print(str(lineData[-1]))
         time.sleep(azTime/sampleNum);
-<<<<<<< HEAD
     Stop();
-=======
-        print(i)
-    writeStop();
->>>>>>> master
     moveDown();
     print(altTime)
     time.sleep(altTime);
-<<<<<<< HEAD
     Stop();
     time.sleep(1)
     moveRight();
     moveRight();
-    print("why am I not moving?")
-=======
-    writeStop();
-    moveRight();
-    print("Moving Right now.")
->>>>>>> master
+    print("Left Line Completed")
     for i in range(1,sampleNum):
         lineData.append(Query());
         print(str(lineData[-1]))
+        
         time.sleep(azTime/sampleNum);
-<<<<<<< HEAD
     Stop();
     return lineData;
 
-def rasterScan(azTime, altTime, rows = 10, rowSampleNum  = 100):
-
-=======
-    writeStop();
-    return lineData;
-
-def rasterScan(azTime, altTime, rows = 10, rowSampleNum  = 100):
-    rows = rows//2;
->>>>>>> master
+def rasterScan(azTime, altTime, rows = 6, rowSampleNum  = 75):
     rasterData = []
     for i in range(1, int(rows)-1):
         print("Hot Pocket Cooked")
         [rasterData.append(lineData) for lineData in (scanTwoLines(azTime, altTime/rows, sampleNum = rowSampleNum))]
         moveDown();
-<<<<<<< HEAD
         print("Line Done")
         time.sleep(altTime/rows);
         Stop();
@@ -126,27 +100,48 @@ def rasterScan(azTime, altTime, rows = 10, rowSampleNum  = 100):
     [rasterData.append(lineData) for lineData in (scanTwoLines(azTime, altTime/rows, sampleNum = rowSampleNum))]
     from pprint import pprint;
     pprint(rasterData)
-=======
-        time.sleep(altTime/rows);
-        writeStop();
-        print("full line recorded. Trying again.")
-    scanTwoLines(azTime, altTime/rows, sampleNum = rowSampleNum)
->>>>>>> master
     writeCSV(rasterData);
+    return rasterData
 
-def writeCSV(data):
-	with open('AcceptanceCharacterization.csv', 'wt') as f:
-		writer = csv.writer(f)
-		for row in data:
-			writer.writerow(row)
+def writeCSV(data, name = "Characterization.csv"):
+    with open(name, 'wt') as f:
+        writer = csv.writer(f)
+        for row in data:
+            print("Writing Row:" , row);
+            writer.writerow(row);
+    print("Data Written")
 
-<<<<<<< HEAD
-lolWut = []
-for i in range(1,10):
-    lolWut.append([1,2,3])
-writeCSV(lolWut);
-# rasterScan(1, 1);
-   
-=======
-rasterScan(4, 4)    
->>>>>>> master
+def getMax(data):
+    m =max( [i[-1] for i in data] );
+    for i in data:
+        if i[-1] is m: return i;
+
+
+def autoAlignRec(speed, name="Characterization.csv", minSpeed = 5):
+    deviation = 6;
+    setSpeed(speed)
+    moveUp()
+    moveRight()
+    time.sleep(deviation/3);
+    Stop()
+    data = getMax(rasterScan(deviation, deviation*2/3, name = "1" + name));
+    goPosition(data)
+    if speed< minSpeed+1: return
+    autoAlign(speed-1, name="1"+name);
+
+def autoAlign(speed, minSpeed=5):
+    SER.write(b"~");
+    autoAlignRec(speed, minSpeed = minSpeed);
+
+
+autoAlign(9);
+
+
+# setSpeed(6)
+# SER.write(b"~")
+# data =rasterScan(6,4, rows = 6, rowSampleNum = 75)
+#m = getMax(data)
+# p = m[:2];
+# goPosition(p)
+
+
