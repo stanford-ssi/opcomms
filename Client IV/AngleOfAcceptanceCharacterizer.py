@@ -117,24 +117,24 @@ def getMax(data):
         if i[-1] is m: return i;
 
 
-def autoAlignRec(speed, name="Characterization.csv", minSpeed = 5):
-    deviation = 6;
+def autoAlignRec(speed, name="_autoAlign.csv", minSpeed = 5, deviation = 6):
+    
     setSpeed(speed)
     moveUp()
     moveRight()
     time.sleep(deviation/3);
     Stop()
-    data = getMax(rasterScan(deviation, deviation*2/3, name = "1" + name));
+    data = getMax(rasterScan(deviation, deviation, name = str(speed) + name));
     goPosition(data)
-    if speed< minSpeed+1: return
-    autoAlign(speed-1, name="1"+name);
+    if speed<= minSpeed: return
+    autoAlign(speed-1, name=name);
 
-def autoAlign(speed, minSpeed=5):
+def autoAlign(speed = 8, minSpeed=5, deviation = 6):
     SER.write(b"~");
-    autoAlignRec(speed, minSpeed = minSpeed);
+    autoAlignRec(speed, minSpeed = minSpeed, deviation = deviation);
 
 
-autoAlign(9);
+autoAlign();
 
 
 # setSpeed(6)
