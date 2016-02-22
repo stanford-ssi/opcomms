@@ -24,12 +24,11 @@ global goto; goto = b"G"
 deviceName = '/dev/something'
 
 SER = serialParser.ser
-killed = False;
-paused = False;
+
 class Align(): #Supposed to be passed by reference somehow.
-    def __init__(self,killed,paused):
-        self.killed = killed
-        self.paused = paused
+    def __init__(self):
+        self.killed = False
+        self.paused = False
         self.left = b"L"
         self.right  = b"R"
         self.up  = b"U"
@@ -173,6 +172,7 @@ class Align(): #Supposed to be passed by reference somehow.
             lineData.append(self.Query());
             print(str(lineData[-1]))
             time.sleep(azTime/sampleNum);
+            if self.killed: return lineData
         self.Stop();
         time.sleep(self.stopPause);
         self.moveDown();
@@ -188,6 +188,7 @@ class Align(): #Supposed to be passed by reference somehow.
             print(str(lineData[-1]))
             
             time.sleep(azTime/sampleNum);
+            if self.killed: return lineData
         self.Stop();
         time.sleep(self.stopPause);
         return lineData;
@@ -240,6 +241,7 @@ class Align(): #Supposed to be passed by reference somehow.
         self.autoAlignRec(speed-1, name=name, minSpeed=minSpeed, deviation=deviation);
 
     def autoAlign(self, speed = 8, minSpeed=5, deviation = 6):
+        print("Starting auto align")
         SER.write(b"~");
         self.autoAlignRec(speed, minSpeed = minSpeed, deviation = deviation);
         print("Auto Align Completeeeed!!")

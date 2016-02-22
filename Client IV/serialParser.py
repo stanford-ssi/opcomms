@@ -58,7 +58,7 @@ def signalStr():
 def getPos():
     ser.flushInput()
     ser.write(b"Q")
-    return [int(i) for i in ser.readline().split()[:2]]
+    return [int(i) for i in ser.readline().split()]
 
 def moveTo(azi, asc):
     print(azi, asc)

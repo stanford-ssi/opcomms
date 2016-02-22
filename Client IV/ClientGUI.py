@@ -16,12 +16,16 @@ import serialParser
 import queue
 import collections
 import math
+import numpy as np
+import scipy.signal as signal
+import ClassAlign
 
 LONG_DELAY = 250
 DELAY = 1
 DELAY_SEC = DELAY / 1000.0
-READS = 1000 // DELAY
+READS = 600 #1000 // DELAY
 MAX_READING = 1024.0
+MAX_POS = 2**24
 
 class MainWindow(Tk):
 	def __init__(self, parent):
@@ -124,14 +128,15 @@ class AlignWindow:
 		self.populateAlignWindow()
 		
 		self.last_cmd = ""
-		def raw(st, override=0): 
+		def raw(st, override=0, spd=0): 
 			def pt(e): 
 				if override or self.last_cmd != st:
 					serialParser.raw(st)
 					self.last_cmd = st
+				if spd: self.speed = int(st)
 			return pt
 		
-		for i in range(1, 10): self.window.bind("%d" % i, raw(str(i)))
+		for i in range(1, 10): self.window.bind("%d" % i, raw(str(i), spd=1))
 		self.window.bind("<KeyRelease-Up>", raw("X"))
 		self.window.bind("<KeyRelease-Down>", raw("X"))
 		self.window.bind("<KeyRelease-Left>", raw("X"))
@@ -143,7 +148,10 @@ class AlignWindow:
 		self.window.bind("`", raw("~", override=1))
 		
 		self.q_out = collections.deque()
+		self.speed = 9; raw("9")
 		#for i in range(self.oscope_width): self.q_out.append(0)
+		self.oscopeThread = None
+		self.alignment = None
 	
 	def populateAlignWindow(self):
 		self.addGPSEntry()
@@ -203,43 +211,54 @@ class AlignWindow:
 		#oscopeLabel.pack(pady = 10)
 		self.oscope = Canvas(sensorControlsFrame, width = self.oscope_width, 
 							height = self.oscope_height, bg = "black")
-		#angleDisplay = Canvas(sensorControlsFrame, width = 200, height = 300, bg = "white")
-		self.oscopeSlider = Scale(sensorControlsFrame, from_=3, to=0,
+		self.angleDisplay = Canvas(sensorControlsFrame, width = 200, height = 300, bg = "white")
+		self.oscopeSlider = Scale(sensorControlsFrame, from_=1.5, to=0,
 								resolution=0.01, showvalue=False, length=self.oscope_height)
-		#self.oscopeSlider.set(1)
+		self.oscopeSlider.set(0.5)
 		oscopeLabel.grid(row = 0, column = 0)
 		maxAvgFrame.grid(row=1, column=0)
 		self.oscope.grid(row = 2, column = 0)
 		self.oscopeSlider.grid(row=2, column=1)
-		#angleDisplay.grid(row = 2, column = 2)
+		self.angleDisplay.grid(row = 2, column = 2)
 
 		sensorControlsFrame.update_idletasks()
-		#self.populateAngleDisplay(angleDisplay)
 
-	def populateAngleDisplay(self, angleDisplay):
-		width = angleDisplay.winfo_width()
-		print(width)
-		height = angleDisplay.winfo_height()
-		print(height)
+	def populateAngleDisplay(self, x, y):
+		# 194 = Earth rotation speed; 46600 = 1 deg/s
+		if x > MAX_POS/2: x -= MAX_POS
+		if y > MAX_POS/2: y -= MAX_POS
+		res = int(5 * ([0] + [x*194 for x in [2, 4, 8, 16, 32]] 
+					+ [x*46600 for x in [.5, 1, 2, 4]])[self.speed])
+		width = self.angleDisplay.winfo_width()
+		height = self.angleDisplay.winfo_height()
 		diameter = 100
-		heightPadding = 50
-		angleDisplay.create_oval([(width-diameter)/2, heightPadding, (width-diameter)/2+diameter, heightPadding+diameter])
-
-	def populateAngleDisplay(self, angleDisplay):
-		width = angleDisplay.winfo_width()
-		height = angleDisplay.winfo_height()
-		diameter = 100
-		heightPadding = 10
-		angleDisplay.create_oval([(width-diameter)/2, heightPadding, (width-diameter)/2+diameter, heightPadding+diameter], outline = "#9e9e9e")
-		angleDisplay.create_arc([(width-diameter)/2, height-(heightPadding+diameter), (width-diameter)/2+diameter, height-heightPadding], extent = 180, outline = "#9e9e9e")
+		pad = 30
+		self.angleDisplay.delete(ALL)
+		self.angleDisplay.create_line(width/2-pad, 0, width/2-pad, height)
+		self.angleDisplay.create_line(width-pad, 0, width-pad, height)
+		def create_triangle(x, y, display):
+			display.create_polygon(x, y, x+pad/2, y-pad/4, x+pad/2, y+pad/4)
+		create_triangle(width/2-pad, height/2, self.angleDisplay)
+		create_triangle(width-pad, height/2, self.angleDisplay)
+		scale = self.tickDistance(2*res)
+		def drawLabels(xpos, x0):
+			start = (x0 + res) // scale * scale
+			for xi in range(start, x0 - res, -scale):
+				xp = (x0 + res - xi) / (2*res) * height
+				self.angleDisplay.create_line(xpos-5, xp, xpos, xp)
+				self.angleDisplay.create_text(xpos-30, xp, text=str(xi))
+		drawLabels(width/2-pad, x)
+		drawLabels(width-pad, y)
+		#angleDisplay.create_oval([(width-diameter)/2, heightPadding, (width-diameter)/2+diameter, heightPadding+diameter], outline = "#9e9e9e")
+		#angleDisplay.create_arc([(width-diameter)/2, height-(heightPadding+diameter), (width-diameter)/2+diameter, height-heightPadding], extent = 180, outline = "#9e9e9e")
 	
 	def addControlButtons(self):
 		controlButtonsFrame = Frame(self.window)
 		controlButtonsFrame.grid(row = 2, column = 0)
 		controlButtonsFrame.config(bg = "white")
 
-		startButton = Button(controlButtonsFrame, text = "Start", font = ("Sans Serif", 8, "bold"), fg = "white", bg = "DarkGreen", activebackground = "green")
-		bigRedButton = Button(controlButtonsFrame, text = "Stop", font = ("Sans Serif", 8, "bold"), fg = "white", bg = "red", activebackground = "orange red")
+		startButton = Button(controlButtonsFrame, text = "Start", font = ("Sans Serif", 8, "bold"), fg = "white", bg = "DarkGreen", activebackground = "green", command=self.start)
+		bigRedButton = Button(controlButtonsFrame, text = "Stop", font = ("Sans Serif", 8, "bold"), fg = "white", bg = "red", activebackground = "orange red", command=self.stop)
 		closeButton = Button(controlButtonsFrame, text = "Close", font = ("Sans Serif", 8, "bold"), fg = "white", bg = "cyan4", activebackground = "cyan", command=self.close)
 
 		startButton.grid(row = 0, column = 0, pady = "0 10")
@@ -271,11 +290,11 @@ class AlignWindow:
 		asc = align.getGPSAscension(self.homeGPS, self.targetGPS)
 		azi = align.getGPSAzimuth(self.homeGPS, self.targetGPS)
 		serialParser.moveTo(azi, asc)
-
-	def start(self):
-		#self.alignment = AlignThread(3, "Align_Thread", self)
-		#self.alignment.start()
-		return 0
+	
+	def tickDistance(self, height):
+		height /= 2.5
+		base = 10**int(math.log10(height))
+		return int([-1, 1, 1, 2, 2, 2, 5, 5, 5, 5, 5][int(height/base)] * base)
 
 	def plot(self):
 		transform = lambda x: self.oscope_height - x*zoom
@@ -283,61 +302,84 @@ class AlignWindow:
 		mult = 10 ** self.oscopeSlider.get()
 		zoom = self.oscope_height * mult / MAX_READING
 		units_top = MAX_READING / mult
-		units_scale = units_top/2.5
 		# round units_top to some nice round number
-		base = 10**int(math.log10(units_scale))
-		scale = int([1, 1, 1, 2.5, 2.5, 2.5, 5, 5, 5, 5, 5][int(units_scale/base)] * base)
+		scale = self.tickDistance(units_top)
 		for i in range(0, int(units_top), scale):
 			val = transform(i)
 			self.oscope.create_line(0, val, self.oscope_width, val, fill="gray")
 			self.oscope.create_text(20, val-10, text=str(i), fill="gray")
-		def plotSeq(vals, color):
-			last = transform(vals[0])
+		def plotSeq(vals, color, tr):
+			last = tr(vals[0])
 			for i in range(len(vals)):
-				val = transform(vals[i])
+				val = tr(vals[i])
 				self.oscope.create_line(i, last, i+1, val, fill=color)
 				last = val
-		plotSeq(self.q_out, "yellow")
-		#plotSeq(np.abs(np.fft.fft(self.q_out)), "green")
-		reads = list(self.q_out)[-READS:]
+		
+		reads = list(x[2] for x in self.q_out)
+		if reads:
+			reads_proc = np.array(reads) - np.mean(reads)
+			fft = np.abs(np.fft.fft(reads_proc))
+			fft = np.repeat(fft[:len(fft)/2], 2)
+			mf, df = min(fft), max(fft) - min(fft)
+			if df:
+				fft = self.oscope_height * (1 - (fft - mf)/df)
+				plotSeq(fft, "gray", lambda x: x)
+		plotSeq(reads, "yellow", transform)
+		reads = reads[-READS:]
 		avg = sum(reads) / len(reads)
 		avgv = transform(avg)
 		self.oscope.create_line(0, avgv, self.oscope_width, avgv, 
 							fill="red", dash=1)
 		self.oscopeMax.config(text="MAX: %d" % max(reads))
 		self.oscopeAvg.config(text="AVG: %.1f" % avg)
+		x, y, _ = self.q_out[-1]
+		self.populateAngleDisplay(x, y);
 
-	def stop(self):
-		#if self.alignment.isAlive():
-		#	alignment.killed = True
-		return 0
+	def start(self):
+		self.alignment = AlignThread(3, "Align_Thread", self)
+		self.alignment.start()
+		self.oscope_stop()
 	
-	def open(self):
-		self.window.deiconify()
+	def stop(self):
+		if self.alignment:
+			self.alignment.kill()
+			while self.alignment.is_alive(): pass
+			print("Align killed")
+			serialParser.raw("X")
+			self.alignment = None
+		self.oscope_start()
+	
+	def oscope_start(self):
+		if self.oscopeThread:
+			print("OScope already alive")
+			return
 		self.window.after(LONG_DELAY, self.checkOScope)
 		self.oscopeThread = OScopeThread("OScopeThread", self)
 		self.oscopeThread.start()
+	
+	def oscope_stop(self): 
+		self.oscopeThread.killed = True
+		self.oscopeThread = None
+	
+	def open(self):
+		self.window.deiconify()
+		self.oscope_start();
 
 	def close(self):
 		self.populateGPSFieldsFromStored()
 		self.window.withdraw()
 		messageChecker.resume()
-		self.oscopeThread.killed = True
-
-	def setFinished(self):
-		# boolean: alignment complete
-		return 0
 	
-	def oscopeUpdate(self, val):
+	def oscopeUpdate(self, x, y, val):
 		qrem = self.oscopeThread.out.qsize()
 		if qrem > 100: print("Falling behind by", qrem)
-		self.q_out.append(val*1.2)
+		self.q_out.append((x, y, val*1.2))
 		if len(self.q_out) > self.oscope_width: self.q_out.popleft()
 	
 	def checkOScope(self):
-		if not self.oscopeThread.killed:
+		if self.oscopeThread:
 			while not self.oscopeThread.out.empty():
-				self.oscopeUpdate(self.oscopeThread.out.get())
+				self.oscopeUpdate(*self.oscopeThread.out.get())
 			self.plot()
 			self.window.after(25, self.checkOScope)
 	
@@ -458,11 +500,11 @@ class OScopeThread(Thread):
 		self.killed = False
 		
 	def run(self):
-		print("Run")
+		print("OScope Run")
 		while not self.killed: 
-			self.out.put(serialParser.signalStr())
+			self.out.put(serialParser.getPos())
 			sleep(DELAY_SEC)
-		print("Killed")
+		print("OScope Killed")
 
 class MessageThread(Thread):
 	def __init__(self, threadID, name, parent):
@@ -499,12 +541,10 @@ class AlignThread(Thread):  # How do I kill this in the middle of running functi
 		self.threadID = threadID
 		self.name = name
 		self.parent = parent
+		self.align = ClassAlign.Align()
 
-		self.killed = False
-
-	def run(self):
-		align.roughAlign(HOME, targetGPS)
-		align.lockOn(threshold, initialSpread)
+	def run(self): self.align.autoAlign()
+	def kill(self): self.align.killed = True
 
 if __name__ == "__main__":
 	app = MainThread(2, "Main_Thread")
