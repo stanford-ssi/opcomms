@@ -22,16 +22,26 @@ global CENTER; CENTER = [0,0];
 global RADIUS; RADIUS = 6.371E6 #Earth radius in meters.
 global SER;
 
+
 global left; left = b"L"
 global right; right  = b"R"
 global up; up  = b"U"
 global down; down = b"D"
-global Query; Query = b"Q"
+global query; query = b"Q"
 global goto; goto = b"G"
+global stop; stop = b"X"
+global blink; blink =b"B"
+global align; align =b"A"
+
+
 deviceName = '/dev/something'
 
 SER = serialParser.ser
 
+#2^24-1 is a full rev
+#Write the full move to GPS coord. Check.
+#Write the full auto align.
+#Draw up the new signal Board.
 
 def getGPSAzimuth(p1,p2):
     #Returns an Azimuth angle (in radians) for p1 pointing at p2 starting from north.
@@ -51,6 +61,17 @@ def getGPSAzimuth(p1,p2):
 def getGPSAscension(p1,p2): #Given two lists of GPS points, returns Ascension (in radians) from p1 to p2
     angle = math.atan( (-p1[2]+p2[2])/getDistance(p1, p2));
     return angle
+
+def alignGPS(p1,p2):
+	#Gives you a difference in 2^24-1 armians.
+	pi = 3.14159;
+	az = getGPSAzimuth(p1,p2);
+	alt = getGPSAscension(p1,p2);
+	SER.write(b"A" + str(az/(2*pi)*(2^24-1)) + "," + str(alt/(2*pi)*(2^24-1)));
+
+
+
+	#Stub; get gps angles and add the things.
 
 def getDistance(p1,p2):
     return math.sqrt( ((p1[0]-p2[0])*RADIUS)**2 + ((p1[1]-p2[1])*RADIUS)**2 );
