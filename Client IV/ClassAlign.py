@@ -10,6 +10,7 @@ import time
 import serial
 import serialParser
 import csv
+import numpy as np
 
 global CENTER; CENTER = [0,0];  
 global RADIUS; RADIUS = 6.371E6 #Earth radius in meters.
@@ -216,13 +217,13 @@ class Align(): #Supposed to be passed by reference somehow.
         print("Data Written: " + name)
 
     def getMax(self,data):
-        m =max( [i[-1] for i in data] );
-        for i in data:
-            if i[-1] is m: return i;
-
+        data = np.array(data)
+        pts, wts = data[:, :-1], data[:, -1]
+        t = max(wts)/2
+        return [int(i) for i in np.average(pts[wts > t], 0, wts[wts > t])]
 
     def autoAlignRec(self,speed, name="_autoAlign.csv", minSpeed = 5, deviation = 6):
-        sigma = 2 #scaling factor to make time.sleep() wait for the same amount of time as a rasterScan call.
+        sigma = 1.3 #scaling factor to make time.sleep() wait for the same amount of time as a rasterScan call.
         self.setSpeed(speed)
         self.Stop();
         time.sleep(self.stopPause);
@@ -259,4 +260,5 @@ class Align(): #Supposed to be passed by reference somehow.
 
 # roughAlign(p1,p2);
 # lockOn(threshold, 5*3.14159/180);
-
+if __name__ == '__main__':
+    Align().autoAlign()

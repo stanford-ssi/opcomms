@@ -16,14 +16,12 @@ import serialParser
 import queue
 import collections
 import math
-import numpy as np
-import scipy.signal as signal
 import ClassAlign
 
-LONG_DELAY = 250
-DELAY = 1
+LONG_DELAY = 1000
+DELAY = 10
 DELAY_SEC = DELAY / 1000.0
-READS = 600 #1000 // DELAY
+READS = 50 #1000 // DELAY
 MAX_READING = 1024.0
 MAX_POS = 2**24
 
@@ -227,7 +225,7 @@ class AlignWindow:
 		# 194 = Earth rotation speed; 46600 = 1 deg/s
 		if x > MAX_POS/2: x -= MAX_POS
 		if y > MAX_POS/2: y -= MAX_POS
-		res = int(5 * ([0] + [x*194 for x in [2, 4, 8, 16, 32]] 
+		res = int(2 * ([0] + [x*194 for x in [2, 4, 8, 16, 32]] 
 					+ [x*46600 for x in [.5, 1, 2, 4]])[self.speed])
 		width = self.angleDisplay.winfo_width()
 		height = self.angleDisplay.winfo_height()
@@ -316,7 +314,7 @@ class AlignWindow:
 				last = val
 		
 		reads = list(x[2] for x in self.q_out)
-		if reads:
+		if False and reads:
 			reads_proc = np.array(reads) - np.mean(reads)
 			fft = np.abs(np.fft.fft(reads_proc))
 			fft = np.repeat(fft[:len(fft)/2], 2)
@@ -369,10 +367,11 @@ class AlignWindow:
 		self.populateGPSFieldsFromStored()
 		self.window.withdraw()
 		messageChecker.resume()
+		self.oscope_stop()
 	
 	def oscopeUpdate(self, x, y, val):
 		qrem = self.oscopeThread.out.qsize()
-		if qrem > 100: print("Falling behind by", qrem)
+		if qrem > 200: print("Falling behind by", qrem)
 		self.q_out.append((x, y, val*1.2))
 		if len(self.q_out) > self.oscope_width: self.q_out.popleft()
 	
