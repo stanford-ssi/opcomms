@@ -216,12 +216,28 @@ class Align(): #Supposed to be passed by reference somehow.
                 writer.writerow(row);
         print("Data Written: " + name)
 
-    def getMax(self,data):
-        data = np.array(data)
-        pts, wts = data[:, :-1], data[:, -1]
-        t = max(wts)/2
-        return [int(i) for i in np.average(pts[wts > t], 0, wts[wts > t])]
 
+    def getCentroid(self, data, center, radius):
+        data = np.array(data)
+        pts, wts = data[:, :-1 ], data[:, -1]
+        return [int(i) for i in np.average(pts[pts-center < radius], axis= 0, weights = wts[pts-center < radius])]
+
+    def getBestPoint(self,data):
+        MountResolution = 5;
+        window = [max(data[0])-min(data[0], max[data[1]- min[data[1] ]
+        center = [int(max(data[0])+min(data[0])) /2), int((max[data[1]-min[data[1]) /2)]
+
+        c1 = getCentroid(data, center, window);
+        print(c1);
+        c2 = getCentroid(data, c1, window/2);
+        print(c2);
+        c3 = getCentroid(data, c2, window/4);
+        c4 = getCentroid(data, c3, window/8);
+        c5 = getCentroid(data, c4, window/16);
+        return c5;
+
+
+        
     def autoAlignRec(self,speed, name="_autoAlign.csv", minSpeed = 5, deviation = 6):
         sigma = 1.3 #scaling factor to make time.sleep() wait for the same amount of time as a rasterScan call.
         self.setSpeed(speed)
