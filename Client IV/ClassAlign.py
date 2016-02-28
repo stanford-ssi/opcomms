@@ -22,7 +22,6 @@ global up; up  = b"U"
 global down; down = b"D"
 global Query; Query = b"Q"
 global goto; goto = b"G"
-deviceName = '/dev/something'
 
 SER = serialParser.ser
 
@@ -100,66 +99,7 @@ class Align(): #Supposed to be passed by reference somehow.
         recieved = (SER.readline()).decode()
         t = str(recieved).split(" ");
         return [int(t[0].split("'")[-1] ), int(t[1].split("'")[-1]), int( t[2].split("\\")[0] ) ];
-    # def lineSegment(self, move, length, numPoints=20): #move is supposed to be a 0-7 movement signal.
-    #     omega = 2; #The two is a weird scaling constant to work in real time.
-    #     pauseTime = length/numPoints/omega; 
-    #     lineData = [];
-    #     Stop();
-    #     time.sleep(.3);
 
-    #     moveLeft();
-
-    #     moveLeft();
-    #     moveDown();
-
-    #     moveRight();
-    #     moveDown();
-
-    #     moveRight();
-
-    #     moveUp();
-    #     moveRight();
-
-    #     moveUp();
-
-    #     moveUp();
-    #     moveLeft();
-
-
-    #     for i in range(1,numPoints):
-    #         lineData.append(Query());
-    #         print(str(lineData[-1]))
-    #         time.sleep(pauseTime));
-    #         if self.paused or self.killed: return lineData;
-    #     Stop();
-    #     time.sleep(.3)
-    #     return lineData;
-    def octogon(self, sigma, numPoints = 100):
-        for i in range(0,7):
-            lineSegment(i, sigma, int(numPoints/8) );
-            # [rasterData.append(lineData) for lineData in (scanTwoLines(azTime, altTime/rows, sampleNum = rowSampleNum))]
-    def spiral(self, sigma, numPoints = 100, numRevolutions = 5): #Executes a spiral pattern 
-        #and returns [sig, rightAzimuth, Ascension, pointNum] of maximum signal seen by partner
-        #For manual setting, use numPoints = 4, numRevolutions = 1;
-        #Sigma is the spread factor. The spiral will sweep out within a cone of angle sigma.
-        w = 2*3.14159/numPoints*numRevolutions;
-        max = 0;
-        signalComp = [];
-        for t in range(0, numPoints)/numPoints:
-            rA = sigma*t*math.cos(w*t) + self.center[0]
-            Asc = sigma*t*math.sin(w*t) + self.center[1]
-            signal = getPointStrength(rA, Asc) #TODO, stub, 
-            singalComp.append = [signal, rA, Asc, t*100]
-            if signal>signalComp[max][0]: max = t*100;
-            if self.paused or self.killed: return None;
-        return signalComp[max]
-    def lockOn(self, threshold, initialSpread, repLimit = 10): #An arbitrarily fine alignment system. (Assuming perfect mechanics)
-        global CENTER;
-        if repLimit < 1: raise Exception("Repeated too many times. Unable to lock"); #Prevents infinite tunneling if you're off course
-        maxSig = spiral(initialSpread);
-        self.center = [ maxSig[1], maxSig[2] ];
-        if self.paused or self.killed: return None;
-        if(maxSig[0] < threshold): lockOn(threshold, initialSpread/2, repLimit = repLimit-1 );
     def roughAlign(self,p1,p2):
         global CENTER
         CENTER[0] = getGPSAzimuth(p1,p2);
@@ -183,7 +123,6 @@ class Align(): #Supposed to be passed by reference somehow.
         time.sleep(self.stopPause);
         self.moveRight(); #To fix the weird; right then immediatly stop problem we've been facing.
         self.moveRight();
-        print("Left Line Completed") #TODO remove 
         for i in range(1,sampleNum):
             lineData.append(self.Query());
             print(str(lineData[-1]))
@@ -221,16 +160,17 @@ class Align(): #Supposed to be passed by reference somehow.
         data = np.array(data)
         pts, wts = data[:, :-1 ], data[:, -1]
         return [int(i) for i in np.average(pts[pts-center < radius], axis= 0, weights = wts[pts-center < radius])]
-
+        #Doesn't deal with overflow. Also, not sure if this is how to effectively handle radius.
+        #Also, np arrays make very little sense to me.  
     def getBestPoint(self,data):
         MountResolution = 5;
         window = [max(data[0])-min(data[0], max[data[1]- min[data[1] ]
         center = [int(max(data[0])+min(data[0])) /2), int((max[data[1]-min[data[1]) /2)]
-
+        #Looks at a window of x,y values centered around the center.
         c1 = getCentroid(data, center, window);
         print(c1);
         c2 = getCentroid(data, c1, window/2);
-        print(c2);
+        print(c2);  #iterative Centroids.
         c3 = getCentroid(data, c2, window/4);
         c4 = getCentroid(data, c3, window/8);
         c5 = getCentroid(data, c4, window/16);
@@ -252,7 +192,7 @@ class Align(): #Supposed to be passed by reference somehow.
         from pprint import pprint;  #TODO remove 
         pprint(rasterData)
         self.writeCSV(rasterData, name = str(speed) + name);
-        self.GoTo(self.getMax(rasterData));
+        self.GoTo(self.getBestPoint(rasterData));
         time.sleep(self.stopPause);
         if speed<= minSpeed: return
         self.autoAlignRec(speed-1, name=name, minSpeed=minSpeed, deviation=deviation);
