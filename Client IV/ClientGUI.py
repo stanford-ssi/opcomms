@@ -19,7 +19,7 @@ import math
 import ClassAlign
 
 LONG_DELAY = 1000
-DELAY = 10
+DELAY = 1
 DELAY_SEC = DELAY / 1000.0
 READS = 50 #1000 // DELAY
 MAX_READING = 1024.0
@@ -307,6 +307,7 @@ class AlignWindow:
 			self.oscope.create_line(0, val, self.oscope_width, val, fill="gray")
 			self.oscope.create_text(20, val-10, text=str(i), fill="gray")
 		def plotSeq(vals, color, tr):
+			if not vals: return
 			last = tr(vals[0])
 			for i in range(len(vals)):
 				val = tr(vals[i])
@@ -324,14 +325,15 @@ class AlignWindow:
 				plotSeq(fft, "gray", lambda x: x)
 		plotSeq(reads, "yellow", transform)
 		reads = reads[-READS:]
-		avg = sum(reads) / len(reads)
+		avg = sum(reads) / len(reads) if reads else 0
 		avgv = transform(avg)
 		self.oscope.create_line(0, avgv, self.oscope_width, avgv, 
 							fill="red", dash=1)
-		self.oscopeMax.config(text="MAX: %d" % max(reads))
+		self.oscopeMax.config(text="MAX: %d" % max(reads) if reads else 0)
 		self.oscopeAvg.config(text="AVG: %.1f" % avg)
-		x, y, _ = self.q_out[-1]
-		self.populateAngleDisplay(x, y);
+		if self.q_out: 
+			x, y, _ = self.q_out[-1]
+			self.populateAngleDisplay(x, y);
 
 	def start(self):
 		self.alignment = AlignThread(3, "Align_Thread", self)

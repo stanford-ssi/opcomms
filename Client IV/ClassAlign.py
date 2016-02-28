@@ -157,26 +157,30 @@ class Align(): #Supposed to be passed by reference somehow.
 
 
     def getCentroid(self, data, center, radius):
-        data = np.array(data)
         pts, wts = data[:, :-1 ], data[:, -1]
-        return [int(i) for i in np.average(pts[pts-center < radius], axis= 0, weights = wts[pts-center < radius])]
+        samp = abs(pts - center) < radius
+        if not np.any(samp): return center
+        return np.average(pts[samp], axis=0, weights=wts[samp]).astype(int)
         #Doesn't deal with overflow. Also, not sure if this is how to effectively handle radius.
         #Also, np arrays make very little sense to me.  
     def getBestPoint(self,data):
         MountResolution = 5;
-        window = [max(data[0])-min(data[0], max[data[1]- min[data[1] ]
-        center = [int(max(data[0])+min(data[0])) /2), int((max[data[1]-min[data[1]) /2)]
-        #Looks at a window of x,y values centered around the center.
-        c1 = getCentroid(data, center, window);
-        print(c1);
-        c2 = getCentroid(data, c1, window/2);
-        print(c2);  #iterative Centroids.
-        c3 = getCentroid(data, c2, window/4);
-        c4 = getCentroid(data, c3, window/8);
-        c5 = getCentroid(data, c4, window/16);
+        # make adjustment so that 2^24 is close to 0
+        data = np.array(data)
+        ARM_MAX = 2**24
+        data = (data + ARM_MAX/2) % ARM_MAX - ARM_MAX/2
+        xp, yp = data[:, 0], data[:, 1]
+        if max(max(abs(xp)), max(abs(yp))) > ARM_MAX/4:
+            print("Warning: Integer overflow may occur")
+        xmin, xmax, ymin, ymax = min(xp), max(xp), min(yp), max(yp)
+        radius = min((xmax - xmin)/2, (ymax - ymin)/2)
+        center = (xmin + xmax)/2, (ymin + ymax)/2
+        #Looks at a radius of x,y values centered around the center.
+        for i in range(5): 
+            center = getCentroid(data, center, radius)
+            print("Iteration %d: %s" % (i, center))
+            radius /= 2
         return c5;
-
-
         
     def autoAlignRec(self,speed, name="_autoAlign.csv", minSpeed = 5, deviation = 6):
         sigma = 1.3 #scaling factor to make time.sleep() wait for the same amount of time as a rasterScan call.
@@ -204,9 +208,6 @@ class Align(): #Supposed to be passed by reference somehow.
         print("Auto Align Completeeeed!!")
         SER.write(b"~");
 
-
-
-
 #      #Lat      , Long,      ,Alt
 # p1 = [37.424928, -122.176934, 100];
 # p2 = [37.424157, -122.177866, 150];
@@ -217,4 +218,5 @@ class Align(): #Supposed to be passed by reference somehow.
 # roughAlign(p1,p2);
 # lockOn(threshold, 5*3.14159/180);
 if __name__ == '__main__':
-    Align().autoAlign()
+    #Align().autoAlign()
+    showPlots()
