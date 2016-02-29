@@ -150,6 +150,8 @@ class AlignWindow:
 		#for i in range(self.oscope_width): self.q_out.append(0)
 		self.oscopeThread = None
 		self.alignment = None
+		self.oldX, self.oldY = None, None
+		self.posUpdating = True
 	
 	def populateAlignWindow(self):
 		self.addGPSEntry()
@@ -227,13 +229,21 @@ class AlignWindow:
 		if y > MAX_POS/2: y -= MAX_POS
 		res = int(2 * ([0] + [x*194 for x in [2, 4, 8, 16, 32]] 
 					+ [x*46600 for x in [.5, 1, 2, 4]])[self.speed])
+		TOL = res/20
+		if self.oldX is None or self.oldY is None or self.posUpdating > 5 \
+				or (abs(x - self.oldX) < TOL and abs(y - self.oldY) < TOL):
+			self.oldX, self.oldY = x, y
+			self.posUpdating = 0
+		else: 
+			self.posUpdating += 1
+			return
 		width = self.angleDisplay.winfo_width()
 		height = self.angleDisplay.winfo_height()
 		diameter = 100
 		pad = 30
 		self.angleDisplay.delete(ALL)
-		self.angleDisplay.create_line(width/2-pad, 0, width/2-pad, height)
-		self.angleDisplay.create_line(width-pad, 0, width-pad, height)
+		self.angleDisplay.create_line(width/2-pad, pad, width/2-pad, height-pad)
+		self.angleDisplay.create_line(width-pad, pad, width-pad, height-pad)
 		def create_triangle(x, y, display):
 			display.create_polygon(x, y, x+pad/2, y-pad/4, x+pad/2, y+pad/4)
 		create_triangle(width/2-pad, height/2, self.angleDisplay)
@@ -243,13 +253,14 @@ class AlignWindow:
 			start = (x0 + res) // scale * scale
 			for xi in range(start, x0 - res, -scale):
 				xp = (x0 + res - xi) / (2*res) * height
-				self.angleDisplay.create_line(xpos-5, xp, xpos, xp)
-				self.angleDisplay.create_text(xpos-30, xp, text=str(xi))
+				if xp > pad:
+					self.angleDisplay.create_line(xpos-5, xp, xpos, xp)
+					self.angleDisplay.create_text(xpos-pad, xp, text=str(xi))
 		drawLabels(width/2-pad, x)
 		drawLabels(width-pad, y)
-		#angleDisplay.create_oval([(width-diameter)/2, heightPadding, (width-diameter)/2+diameter, heightPadding+diameter], outline = "#9e9e9e")
-		#angleDisplay.create_arc([(width-diameter)/2, height-(heightPadding+diameter), (width-diameter)/2+diameter, height-heightPadding], extent = 180, outline = "#9e9e9e")
-	
+		self.angleDisplay.create_text(width/2-2*pad, pad/2, text=str(x), fill='red')
+		self.angleDisplay.create_text(width-2*pad, pad/2, text=str(y), fill='red')
+		
 	def addControlButtons(self):
 		controlButtonsFrame = Frame(self.window)
 		controlButtonsFrame.grid(row = 2, column = 0)
@@ -333,7 +344,7 @@ class AlignWindow:
 		self.oscopeAvg.config(text="AVG: %.1f" % avg)
 		if self.q_out: 
 			x, y, _ = self.q_out[-1]
-			self.populateAngleDisplay(x, y);
+			self.populateAngleDisplay(x, y)
 
 	def start(self):
 		self.alignment = AlignThread(3, "Align_Thread", self)

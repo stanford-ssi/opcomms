@@ -156,14 +156,15 @@ class Align(): #Supposed to be passed by reference somehow.
         print("Data Written: " + name)
 
 
-    def getCentroid(self, data, center, radius):
+    def getCentroid(self, data, center, radius=np.inf, thresh=0):
+        #print(center, radius)
         pts, wts = data[:, :-1 ], data[:, -1]
-        samp = abs(pts - center) < radius
+        samp = np.linalg.norm(pts - center, axis=1) < radius and wts > thresh
         if not np.any(samp): return center
-        return np.average(pts[samp], axis=0, weights=wts[samp]).astype(int)
+        return np.average(pts[samp,:], axis=0, weights=wts[samp])
         #Doesn't deal with overflow. Also, not sure if this is how to effectively handle radius.
         #Also, np arrays make very little sense to me.  
-    def getBestPoint(self,data):
+    def getBestPoint(self, data):
         MountResolution = 5;
         # make adjustment so that 2^24 is close to 0
         data = np.array(data)
@@ -173,22 +174,27 @@ class Align(): #Supposed to be passed by reference somehow.
         if max(max(abs(xp)), max(abs(yp))) > ARM_MAX/4:
             print("Warning: Integer overflow may occur")
         xmin, xmax, ymin, ymax = min(xp), max(xp), min(yp), max(yp)
-        radius = min((xmax - xmin)/2, (ymax - ymin)/2)
+        radius = max((xmax - xmin)/2, (ymax - ymin)/2)
         center = (xmin + xmax)/2, (ymin + ymax)/2
-        #Looks at a radius of x,y values centered around the center.
-        for i in range(5): 
-            center = getCentroid(data, center, radius)
-            print("Iteration %d: %s" % (i, center))
-            radius /= 2
-        return c5;
+        min_radius = min(abs(yp[i] - yp[i+1]) for i in range(len(yp)-1))
+        if min_radius == 0:
+            print("Warning: Did the arm move?")
+            min_radius = 1
+        #Looks at a decreasing radius of x,y values centered around the center.
+        while radius > min_radius:
+            old_center = center
+            center = self.getCentroid(data, old_center, radius)        
+            radius *= 0.5
+        return center.astype(int)
         
     def autoAlignRec(self,speed, name="_autoAlign.csv", minSpeed = 5, deviation = 6):
-        sigma = 1.3 #scaling factor to make time.sleep() wait for the same amount of time as a rasterScan call.
+        sigma = .7 #scaling factor to make time.sleep() wait for the same amount of time as a rasterScan call.
         self.setSpeed(speed)
         self.Stop();
         time.sleep(self.stopPause);
-        self.moveUp()
         self.moveRight()
+        time.sleep(self.stopPause);
+        self.moveUp()
         time.sleep(deviation*sigma);
         self.Stop();
         time.sleep(self.stopPause);
@@ -203,7 +209,7 @@ class Align(): #Supposed to be passed by reference somehow.
 
     def autoAlign(self, speed = 8, minSpeed=5, deviation = 6):
         print("Starting auto align")
-        SER.write(b"~");
+        #SER.write(b"~");
         self.autoAlignRec(speed, minSpeed = minSpeed, deviation = deviation);
         print("Auto Align Completeeeed!!")
         SER.write(b"~");
@@ -218,5 +224,5 @@ class Align(): #Supposed to be passed by reference somehow.
 # roughAlign(p1,p2);
 # lockOn(threshold, 5*3.14159/180);
 if __name__ == '__main__':
-    #Align().autoAlign()
-    showPlots()
+    Align().autoAlign(minSpeed=9)
+    #showPlots()
