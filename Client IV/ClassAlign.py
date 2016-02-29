@@ -155,38 +155,41 @@ class Align(): #Supposed to be passed by reference somehow.
                 writer.writerow(row);
         print("Data Written: " + name)
 
-
     def getCentroid(self, data, center, radius=np.inf, thresh=0):
         #print(center, radius)
         pts, wts = data[:, :-1 ], data[:, -1]
-        samp = np.linalg.norm(pts - center, axis=1) < radius and wts > thresh
+        samp = np.logical_and(np.linalg.norm(pts - center, axis=1) < radius, wts > thresh)
         if not np.any(samp): return center
         return np.average(pts[samp,:], axis=0, weights=wts[samp])
         #Doesn't deal with overflow. Also, not sure if this is how to effectively handle radius.
         #Also, np arrays make very little sense to me.  
-    def getBestPoint(self, data):
-        MountResolution = 5;
-        # make adjustment so that 2^24 is close to 0
+    def getBestPoint(self, data, mode="cent"):
         data = np.array(data)
         ARM_MAX = 2**24
         data = (data + ARM_MAX/2) % ARM_MAX - ARM_MAX/2
-        xp, yp = data[:, 0], data[:, 1]
+        xp, yp, z = data.T
         if max(max(abs(xp)), max(abs(yp))) > ARM_MAX/4:
             print("Warning: Integer overflow may occur")
         xmin, xmax, ymin, ymax = min(xp), max(xp), min(yp), max(yp)
-        radius = max((xmax - xmin)/2, (ymax - ymin)/2)
-        center = (xmin + xmax)/2, (ymin + ymax)/2
-        min_radius = min(abs(yp[i] - yp[i+1]) for i in range(len(yp)-1))
-        if min_radius == 0:
-            print("Warning: Did the arm move?")
-            min_radius = 1
-        #Looks at a decreasing radius of x,y values centered around the center.
-        while radius > min_radius:
-            old_center = center
-            center = self.getCentroid(data, old_center, radius)        
-            radius *= 0.5
-        return center.astype(int)
-        
+        if mode == "max":
+            return data[np.argmax(z)][:2].astype(int)
+        elif mode == "iter":
+            radius = max((xmax - xmin)/2, (ymax - ymin)/2)
+            center = (xmin + xmax)/2, (ymin + ymax)/2
+            min_radius = min(abs(yp[i] - yp[i+1]) for i in range(len(yp)-1))
+            if min_radius == 0:
+                print("Warning: Did the arm move?")
+                min_radius = 1
+            #Looks at a decreasing radius of x,y values centered around the center.
+            while radius > min_radius:
+                old_center = center
+                center = self.getCentroid(data, old_center, radius)        
+                radius *= 0.5
+            return center.astype(int)
+        elif mode == "cent":
+            return self.getCentroid(data, 0,
+                    thresh=max((max(z)+min(z))/2, np.average(z)))
+                    
     def autoAlignRec(self,speed, name="_autoAlign.csv", minSpeed = 5, deviation = 6):
         sigma = .7 #scaling factor to make time.sleep() wait for the same amount of time as a rasterScan call.
         self.setSpeed(speed)
