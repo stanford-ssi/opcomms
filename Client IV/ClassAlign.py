@@ -2,7 +2,7 @@
 #Written by Jake Hillard, copyright 2016, licensed under the MIT open-software license.
 #
 #For Jake's environment. Don't Delete!
-#sudo /home/jake/anaconda3/bin/python ClientGUI.py 
+#sudo /home/jake/anaconda3/bin/python ClientGUI.py
 
 
 import math
@@ -12,7 +12,7 @@ import serialParser
 import csv
 import numpy as np
 
-global CENTER; CENTER = [0,0];  
+global CENTER; CENTER = [0,0];
 global RADIUS; RADIUS = 6.371E6 #Earth radius in meters.
 global SER;
 
@@ -71,12 +71,12 @@ class Align(): #Supposed to be passed by reference somehow.
         return Query()[2];
 
     def GoTo(self,p1):
-        SER.write(self.goto+ bytes( str(p1[0]) + ',' +str(p1[1]), "UTF-8" )) 
+        SER.write(self.goto+ bytes( str(p1[0]) + ',' +str(p1[1]), "UTF-8" ))
         while True:
             t = SER.readline()
             print(t)
             if "Aligned" in str(t): break
-        
+
     def moveLeft(self):
         SER.write(self.left);
 
@@ -105,7 +105,7 @@ class Align(): #Supposed to be passed by reference somehow.
         CENTER[0] = getGPSAzimuth(p1,p2);
         CENTER[1] = getGPSAscension(p1,p2);
         reciever.moveAbsolute(CENTER); #TODO, stub, how to actually move
-    
+
     def scanTwoLines(self,azTime, altTime, sampleNum = 100):
         lineData = [];
         self.moveLeft()
@@ -126,7 +126,7 @@ class Align(): #Supposed to be passed by reference somehow.
         for i in range(1,sampleNum):
             lineData.append(self.Query());
             print(str(lineData[-1]))
-            
+
             time.sleep(azTime/sampleNum);
             if self.killed: return lineData
         self.Stop();
@@ -136,10 +136,10 @@ class Align(): #Supposed to be passed by reference somehow.
     def rasterScan(self,azTime, altTime, rows = 3, rowSampleNum  = 50):
         rasterData = []
         for i in range(1, int(rows)-1):
-            print("Hot Pocket Cooked") #TODO remove 
+            print("Hot Pocket Cooked") #TODO remove
             [rasterData.append(lineData) for lineData in (self.scanTwoLines(azTime, altTime/rows, sampleNum = rowSampleNum))]
-            self.moveDown();        
-            print("Line Done") #TODO remove 
+            self.moveDown();
+            print("Line Done") #TODO remove
             time.sleep(altTime/rows);
             self.Stop();
             time.sleep(self.stopPause);
@@ -151,7 +151,7 @@ class Align(): #Supposed to be passed by reference somehow.
         with open(name, 'wt') as f:
             writer = csv.writer(f)
             for row in data:
-                print("Writing Row:" , row); #TODO remove 
+                print("Writing Row:" , row); #TODO remove
                 writer.writerow(row);
         print("Data Written: " + name)
 
@@ -162,7 +162,7 @@ class Align(): #Supposed to be passed by reference somehow.
         if not np.any(samp): return center
         return np.average(pts[samp,:], axis=0, weights=wts[samp])
         #Doesn't deal with overflow. Also, not sure if this is how to effectively handle radius.
-        #Also, np arrays make very little sense to me.  
+        #Also, np arrays make very little sense to me.
     def getBestPoint(self, data, mode="cent"):
         data = np.array(data)
         ARM_MAX = 2**24
@@ -183,13 +183,13 @@ class Align(): #Supposed to be passed by reference somehow.
             #Looks at a decreasing radius of x,y values centered around the center.
             while radius > min_radius:
                 old_center = center
-                center = self.getCentroid(data, old_center, radius)        
+                center = self.getCentroid(data, old_center, radius)
                 radius *= 0.5
             return center.astype(int)
         elif mode == "cent":
             return self.getCentroid(data, 0,
                     thresh=max((max(z)+min(z))/2, np.average(z)))
-                    
+
     def autoAlignRec(self,speed, name="_autoAlign.csv", minSpeed = 5, deviation = 6):
         sigma = .7 #scaling factor to make time.sleep() wait for the same amount of time as a rasterScan call.
         self.setSpeed(speed)
@@ -202,7 +202,7 @@ class Align(): #Supposed to be passed by reference somehow.
         self.Stop();
         time.sleep(self.stopPause);
         rasterData = self.rasterScan(deviation, deviation);
-        from pprint import pprint;  #TODO remove 
+        from pprint import pprint;  #TODO remove
         pprint(rasterData)
         self.writeCSV(rasterData, name = str(speed) + name);
         self.GoTo(self.getBestPoint(rasterData));
@@ -227,5 +227,9 @@ class Align(): #Supposed to be passed by reference somehow.
 # roughAlign(p1,p2);
 # lockOn(threshold, 5*3.14159/180);
 if __name__ == '__main__':
-    Align().autoAlign(minSpeed=9)
+    Align().autoAlign(minSpeed=6)
+    Align().autoAlign(minSpeed=6)
+    Align().autoAlign(minSpeed=6)
     #showPlots()
+
+####MODIFIED FOR ENGINEERING PRESENTATION

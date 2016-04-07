@@ -5,20 +5,20 @@ ser = None
 def setSerial():
     USE_FAKE = -1
     global ser
-    if ser: 
+    if ser:
         print("Warning: Serial already initialized")
         ser.close()
     ports = [port[0] for port in list_ports.comports()]
     if ports == []:
-        try: 
+        try:
             import fakeSerial
             port = USE_FAKE
             print("No serial port found. Using fake serial...")
         except ImportError: port = ""
-    elif len(ports) == 1: 
+    elif len(ports) == 1:
         print("Port found:", ports[0])
         port = ports[0]
-    else: port = input("Please enter a port: ")
+    else:print(ports); port = input("Please enter a port from the above list: ")
     if port == USE_FAKE: ser = fakeSerial.Serial()
     elif port == "": ser = None
     else: ser = serial.Serial(port, 250000)
@@ -54,7 +54,7 @@ def signalStr():
     except: return 0
     #print(stren)
     return stren
-    
+
 def getPos():
     ser.flushInput()
     ser.write(b"Z")
@@ -62,11 +62,11 @@ def getPos():
 
 def moveTo(azi, asc):
     print(azi, asc)
-    
-def raw(msg): 
+
+def raw(msg):
     print("Raw command:", msg)
     ser.write(toBytes(msg))
-    
-def toBytes(inp): 
+
+def toBytes(inp):
     """ Converts the input to a bytes-like object if it is not already one. """
     return inp.encode() if isinstance(inp, str) else inp
